@@ -23,7 +23,7 @@ import gin
 from six.moves import range
 import tensorflow as tf
 
-from tensorflow.contrib.tpu.python.tpu import tpu_function
+from tensorflow.python.tpu import tpu_function
 
 
 def cross_replica_concat(value, replica_id, num_replicas):
