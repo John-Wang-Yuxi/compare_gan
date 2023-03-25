@@ -34,8 +34,8 @@ class MsSsimScoreTest(tf.test.TestCase):
           tf.zeros([64, 64, 3]),
       ])
       metric = ms_ssim_score.compute_msssim(generated_images, 1)
-      with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
+      with tf.compat.v1.Session() as sess:
+        sess.run(tf.compat.v1.global_variables_initializer())
         result = metric(sess)
         self.assertNear(result, 0.989989, 0.001)
 

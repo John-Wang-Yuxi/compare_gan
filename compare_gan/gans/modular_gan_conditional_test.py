@@ -53,9 +53,9 @@ class ModularGANConditionalTest(parameterized.TestCase,
       gin.bind_parameter("penalty.fn", penalty_fn)
       gin.bind_parameter("loss.fn", loss_fn)
     model_dir = self._get_empty_model_dir()
-    run_config = tf.contrib.tpu.RunConfig(
+    run_config = tf.compat.v1.estimator.tpu.RunConfig(
         model_dir=model_dir,
-        tpu_config=tf.contrib.tpu.TPUConfig(iterations_per_loop=1))
+        tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(iterations_per_loop=1))
     dataset = datasets.get_dataset("cifar10")
     gan = ModularGAN(
         dataset=dataset,

@@ -58,9 +58,9 @@ class ModularGanTest(parameterized.TestCase, test_utils.CompareGanTestCase):
   def setUp(self):
     super(ModularGanTest, self).setUp()
     self.model_dir = self._get_empty_model_dir()
-    self.run_config = tf.contrib.tpu.RunConfig(
+    self.run_config = tf.compat.v1.estimator.tpu.RunConfig(
         model_dir=self.model_dir,
-        tpu_config=tf.contrib.tpu.TPUConfig(iterations_per_loop=1))
+        tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(iterations_per_loop=1))
 
   def _runSingleTrainingStep(self, architecture, loss_fn, penalty_fn):
     parameters = {
@@ -132,7 +132,7 @@ class ModularGanTest(parameterized.TestCase, test_utils.CompareGanTestCase):
     checkpoint_path = tf.train.latest_checkpoint(self.model_dir)
     ema_vars = sorted([v[0] for v in tf.train.list_variables(checkpoint_path)
                        if v[0].endswith("ExponentialMovingAverage")])
-    tf.logging.info("ema_vars=%s", ema_vars)
+    tf.compat.v1.logging.info("ema_vars=%s", ema_vars)
     expected_ema_vars = sorted([
         "generator/fc_noise/kernel/ExponentialMovingAverage",
         "generator/fc_noise/bias/ExponentialMovingAverage",
@@ -149,10 +149,10 @@ class ModularGanTest(parameterized.TestCase, test_utils.CompareGanTestCase):
         "lambda": 1,
         "z_dim": 128,
     }
-    run_config = tf.contrib.tpu.RunConfig(
+    run_config = tf.compat.v1.estimator.tpu.RunConfig(
         model_dir=self.model_dir,
         save_checkpoints_steps=1,
-        tpu_config=tf.contrib.tpu.TPUConfig(iterations_per_loop=1))
+        tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(iterations_per_loop=1))
     dataset = datasets.get_dataset("cifar10")
     gan = ModularGAN(
         dataset=dataset,
@@ -166,7 +166,7 @@ class ModularGanTest(parameterized.TestCase, test_utils.CompareGanTestCase):
 
     for step in range(4):
       basename = os.path.join(self.model_dir, "model.ckpt-{}".format(step))
-      self.assertTrue(tf.gfile.Exists(basename + ".index"))
+      self.assertTrue(tf.io.gfile.exists(basename + ".index"))
       ckpt = tf.train.load_checkpoint(basename)
 
       disc_step_values.append(ckpt.get_tensor("global_step_disc"))

@@ -62,7 +62,7 @@ class ResNetNormTest(tf.test.TestCase):
           ("generator/final_conv/bias:0", [3]),
       ]
       actual_variables = [(v.name, v.shape.as_list())
-                          for v in tf.trainable_variables()]
+                          for v in tf.compat.v1.trainable_variables()]
       for a, e in zip(actual_variables, expected_variables):
         logging.info("actual: %s, expected: %s", a, e)
         self.assertEqual(a, e)
@@ -105,7 +105,7 @@ class ResNetNormTest(tf.test.TestCase):
           ("discriminator/disc_final_fc/bias:0", [1]),
       ]
       actual_variables = [(v.name, v.shape.as_list())
-                          for v in tf.trainable_variables()]
+                          for v in tf.compat.v1.trainable_variables()]
       for a, e in zip(actual_variables, expected_variables):
         logging.info("actual: %s, expected: %s", a, e)
         self.assertEqual(a, e)
@@ -161,7 +161,7 @@ class ResNetNormTest(tf.test.TestCase):
           ("generator/final_conv/bias:0", [3]),
       ]
       actual_variables = [(v.name, v.shape.as_list())
-                          for v in tf.trainable_variables()]
+                          for v in tf.compat.v1.trainable_variables()]
       for a in actual_variables:
         logging.info(a)
       for a, e in zip(actual_variables, expected_variables):
@@ -219,7 +219,7 @@ class ResNetNormTest(tf.test.TestCase):
           ("generator/final_conv/bias:0", [3]),
       ]
       actual_variables = [(v.name, v.shape.as_list())
-                          for v in tf.trainable_variables()]
+                          for v in tf.compat.v1.trainable_variables()]
       for a in actual_variables:
         logging.info(a)
       for a, e in zip(actual_variables, expected_variables):
@@ -305,7 +305,7 @@ class ResNetNormTest(tf.test.TestCase):
           ("generator/final_conv/bias:0", [3]),
       ]
       actual_variables = [(v.name, v.shape.as_list())
-                          for v in tf.trainable_variables()]
+                          for v in tf.compat.v1.trainable_variables()]
       for a in actual_variables:
         logging.info(a)
       for a, e in zip(actual_variables, expected_variables):
@@ -360,7 +360,7 @@ class ResNetNormTest(tf.test.TestCase):
           ("generator/final_conv/bias:0", [3]),
       ]
       actual_variables = [(v.name, v.shape.as_list())
-                          for v in tf.global_variables()]
+                          for v in tf.compat.v1.global_variables()]
       for a in actual_variables:
         logging.info(a)
       for a, e in zip(actual_variables, expected_variables):

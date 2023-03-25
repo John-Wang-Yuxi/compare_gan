@@ -124,14 +124,14 @@ def train_gilbo(gan, sess, outdir, checkpoint_path, dataset, options):
   Raises:
     ValueError: If the GAN has uninitialized variables.
   """
-  uninitialized = sess.run(tf.report_uninitialized_variables())
+  uninitialized = sess.run(tf.compat.v1.report_uninitialized_variables())
   if uninitialized:
     raise ValueError("Model has uninitialized variables!\n%r" % uninitialized)
 
   outdir = os.path.join(outdir, checkpoint_path.replace("/", "_"))
 
-  tf.gfile.MakeDirs(outdir)
-  with tf.variable_scope("gilbo"):
+  tf.io.gfile.makedirs(outdir)
+  with tf.compat.v1.variable_scope("gilbo"):
     ones = tf.ones((gan.batch_size, gan.z_dim))
     # Get a distribution for the prior.
     z_dist = ds.Independent(ds.Uniform(-ones, ones), 1)
@@ -146,7 +146,7 @@ def train_gilbo(gan, sess, outdir, checkpoint_path, dataset, options):
 
     # Build the regressor distribution that encodes images back to predicted
     # samples from the prior.
-    with tf.variable_scope("regressor"):
+    with tf.compat.v1.variable_scope("regressor"):
       z_pred_dist = _build_regressor(fake_images, gan.z_dim)
     # Capture the parameters of the distributions for later analysis.
     dist_p1 = z_pred_dist.distribution.distribution.concentration0
@@ -158,22 +158,22 @@ def train_gilbo(gan, sess, outdir, checkpoint_path, dataset, options):
 
     # Set up training of the GILBO model.
     lr = options.get("gilbo_learning_rate", 4e-4)
-    learning_rate = tf.get_variable(
+    learning_rate = tf.compat.v1.get_variable(
         "learning_rate", initializer=lr, trainable=False)
-    gilbo_step = tf.get_variable("gilbo_step", dtype=tf.int32, initializer=0,
+    gilbo_step = tf.compat.v1.get_variable("gilbo_step", dtype=tf.int32, initializer=0,
                                  trainable=False)
-    opt = tf.train.AdamOptimizer(learning_rate)
+    opt = tf.compat.v1.train.AdamOptimizer(learning_rate)
 
     regressor_vars = tf.contrib.framework.get_variables("gilbo/regressor")
     train_op = opt.minimize(-info, var_list=regressor_vars)
 
   # Initialize the variables we just created.
-  uninitialized = plist(tf.report_uninitialized_variables().eval())
+  uninitialized = plist(tf.compat.v1.report_uninitialized_variables().eval())
   uninitialized_vars = uninitialized.apply(
       tf.contrib.framework.get_variables_by_name)._[0]
-  tf.variables_initializer(uninitialized_vars).run()
+  tf.compat.v1.variables_initializer(uninitialized_vars).run()
 
-  saver = tf.train.Saver(uninitialized_vars, max_to_keep=1)
+  saver = tf.compat.v1.train.Saver(uninitialized_vars, max_to_keep=1)
   try:
     checkpoint_path = tf.train.latest_checkpoint(outdir)
     saver.restore(sess, checkpoint_path)
@@ -191,12 +191,12 @@ def train_gilbo(gan, sess, outdir, checkpoint_path, dataset, options):
   dataset = datasets.get_dataset(dataset)
   x_train = dataset.load_dataset(split_name="train", num_threads=1)
   x_train = x_train.batch(gan.batch_size, drop_remainder=True)
-  x_train = x_train.make_one_shot_iterator().get_next()[0]
+  x_train = tf.compat.v1.data.make_one_shot_iterator(x_train).get_next()[0]
   x_train = tf.reshape(x_train, fake_images.shape)
 
   x_eval = dataset.load_dataset(split_name="test", num_threads=1)
   x_eval = x_eval.batch(gan.batch_size, drop_remainder=True)
-  x_eval = x_eval.make_one_shot_iterator().get_next()[0]
+  x_eval = tf.compat.v1.data.make_one_shot_iterator(x_eval).get_next()[0]
   x_eval = tf.reshape(x_eval, fake_images.shape)
 
   mean_train_consistency = _run_gilbo_consistency(
@@ -234,14 +234,14 @@ def _train_gilbo(sess, gan, saver, learning_rate, gilbo_step, z_sample,
     ai = 0.0
     for j in range(train_steps_per_cycle):
       if j % (train_steps_per_cycle // 10) == 0:
-        tf.logging.info("step:%d, gilbo:%.3f" % (j, ai))
+        tf.compat.v1.logging.info("step:%d, gilbo:%.3f" % (j, ai))
       samp = sess.run(z_sample)
 
       _, z_info = sess.run(
           [train_op, avg_info],
           feed_dict={gan.z: samp, learning_rate: lr})
       ai += (z_info - ai) / (j + 1)
-    tf.logging.info("cycle:%d gilbo:%.3f min next gilbo:%.3f learning rate:%.3f"
+    tf.compat.v1.logging.info("cycle:%d gilbo:%.3f min next gilbo:%.3f learning rate:%.3f"
                     % (i, ai, min_ai, lr))
 
     if ai < min_ai:
@@ -249,7 +249,7 @@ def _train_gilbo(sess, gan, saver, learning_rate, gilbo_step, z_sample,
     if lr < min_lr:
       break
     if np.isnan(ai):
-      tf.logging.info("NaN GILBO at cycle %d, stopping training early." % i)
+      tf.compat.v1.logging.info("NaN GILBO at cycle %d, stopping training early." % i)
       break
 
     ais.append(ai)
@@ -306,7 +306,7 @@ def _eval_gilbo(sess, gan, z_sample, avg_info, dist_p1, dist_p2, fake_images,
       z_infos[i] = sess.run(avg_info, feed_dict={gan.z: samp})
 
     if i % (eval_steps // 10) == 0:
-      tf.logging.info("eval step:%d gilbo:%3.1f" % (i, z_infos[i]))
+      tf.compat.v1.logging.info("eval step:%d gilbo:%3.1f" % (i, z_infos[i]))
 
   if eval_steps:
     mean_eval_info = np.mean(np.nan_to_num(z_infos))
@@ -315,9 +315,9 @@ def _eval_gilbo(sess, gan, z_sample, avg_info, dist_p1, dist_p2, fake_images,
         dist_p2=np.array(z_dist_p2s).reshape([-1, 64]),
         images=np.array(z_fake_images).reshape(
             [-1] + list(z_fake_images[0].shape[1:])))
-    with tf.gfile.Open(os.path.join(outdir, "eval_dists.p"), "w") as f:
+    with tf.io.gfile.GFile(os.path.join(outdir, "eval_dists.p"), "w") as f:
       pickle.dump(eval_dists, f)
-    tf.logging.info("eval gilbo:%3.1f" % mean_eval_info)
+    tf.compat.v1.logging.info("eval gilbo:%3.1f" % mean_eval_info)
 
   return mean_eval_info
 
@@ -351,14 +351,14 @@ def _run_gilbo_consistency(
     Symmetric consistency KL. Additionally saves distribution parameters as a
     pickle as well as any requested images as pngs to outdir.
   """
-  with tf.variable_scope("gilbo"):
-    with tf.variable_scope("regressor", reuse=True):
+  with tf.compat.v1.variable_scope("gilbo"):
+    with tf.compat.v1.variable_scope("regressor", reuse=True):
       z_pred_dist_train = _build_regressor(input_images, gan.z_dim)
       z_sample_train = z_pred_dist_train.sample()
-    dist_p1_ph = tf.placeholder(tf.float32, dist_p1.shape)
-    dist_p2_ph = tf.placeholder(tf.float32, dist_p2.shape)
-    consist_dist_p1_ph = tf.placeholder(tf.float32, dist_p1.shape)
-    consist_dist_p2_ph = tf.placeholder(tf.float32, dist_p2.shape)
+    dist_p1_ph = tf.compat.v1.placeholder(tf.float32, dist_p1.shape)
+    dist_p2_ph = tf.compat.v1.placeholder(tf.float32, dist_p2.shape)
+    consist_dist_p1_ph = tf.compat.v1.placeholder(tf.float32, dist_p1.shape)
+    consist_dist_p2_ph = tf.compat.v1.placeholder(tf.float32, dist_p2.shape)
     dist_p1 = z_pred_dist_train.distribution.distribution.concentration0
     dist_p2 = z_pred_dist_train.distribution.distribution.concentration1
     consist_z_dist_p1 = z_pred_dist.distribution.distribution.concentration0
@@ -439,7 +439,7 @@ def _run_gilbo_consistency(
             _save_image(images[j], filename)
 
       if i % 100 == 0:
-        tf.logging.info(
+        tf.compat.v1.logging.info(
             "%s: step:%d consistency KL:%3.1f" %
             (mode, i, np.mean(consistency_skls)))
 
@@ -456,7 +456,7 @@ def _run_gilbo_consistency(
       consistency_rkl=np.reshape(consistency_rkls, [-1, gan.batch_size]),
       consistency_skl=np.reshape(consistency_skls, [-1, gan.batch_size]),
   )
-  with tf.gfile.Open(
+  with tf.io.gfile.GFile(
       os.path.join(outdir, "%s_consistency_dists.p" % mode), "w") as f:
     pickle.dump(out_dists, f)
 
@@ -467,7 +467,7 @@ def _save_image(img, filename):
   # If img is [H W] or [H W 1], stack into [H W 3] for scipy"s api.
   if len(img.shape) == 2 or img.shape[-1] == 1:
     img = np.stack((img.squeeze(),) * 3, -1)
-  with tf.gfile.Open(filename, "w") as f:
+  with tf.io.gfile.GFile(filename, "w") as f:
     scipy.misc.toimage(img, cmin=0.0, cmax=1.0).save(f)
 
 
@@ -488,11 +488,11 @@ def _save_z_histograms(gan, z_sample, z_pred_dist, outdir, step):
       axs.flat[j].vlines(samp[pk, j], 0, 1.0, linestyle="dashed")
     plt.tight_layout()
     filename = os.path.join(outdir, "z_hist_%03d.png" % step)
-    tf.logging.info("Saving z histogram: %s" % filename)
-    with tf.gfile.Open(filename, "w") as f:
+    tf.compat.v1.logging.info("Saving z histogram: %s" % filename)
+    with tf.io.gfile.GFile(filename, "w") as f:
       fig.savefig(f, dpi="figure")
   except Exception as e:  # pylint: disable=broad-except
-    tf.logging.info("Caught %r while rendering chart. Ignoring.\n%s\n"
+    tf.compat.v1.logging.info("Caught %r while rendering chart. Ignoring.\n%s\n"
                     % (type(e), str(e)))
 
 

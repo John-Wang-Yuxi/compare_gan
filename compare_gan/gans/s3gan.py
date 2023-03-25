@@ -122,7 +122,7 @@ class S3GAN(modular_gan.ModularGAN):
     # Predict the rotation of the image.
     rotation_logits = None
     if "rotation" in self._self_supervision:
-      with tf.variable_scope("discriminator_rotation", reuse=tf.AUTO_REUSE):
+      with tf.compat.v1.variable_scope("discriminator_rotation", reuse=tf.compat.v1.AUTO_REUSE):
         rotation_logits = ops.linear(
             x_rep,
             NUM_ROTATIONS,
@@ -137,7 +137,7 @@ class S3GAN(modular_gan.ModularGAN):
     # Predict the class of the image.
     aux_logits = None
     if self._use_predictor:
-      with tf.variable_scope("discriminator_predictor", reuse=tf.AUTO_REUSE):
+      with tf.compat.v1.variable_scope("discriminator_predictor", reuse=tf.compat.v1.AUTO_REUSE):
         aux_logits = ops.linear(x_rep, y.shape[1], use_bias=True,
                                 scope="predictor_linear", use_sn=use_sn)
         # Apply the projection discriminator if needed.
@@ -145,7 +145,7 @@ class S3GAN(modular_gan.ModularGAN):
           y_predicted = tf.nn.softmax(aux_logits)
         else:
           y_predicted = tf.one_hot(
-              tf.arg_max(aux_logits, 1), aux_logits.shape[1])
+              tf.argmax(aux_logits, 1), aux_logits.shape[1])
         y = (1.0 - is_label_available) * y_predicted + is_label_available * y
         y = tf.stop_gradient(y)
         logging.info("[Discriminator] %s -> aux_logits=%s, y_predicted=%s",
@@ -158,12 +158,12 @@ class S3GAN(modular_gan.ModularGAN):
     return d_probs, d_logits, rotation_logits, aux_logits, is_label_available
 
   def get_class_embedding(self, y, embedding_dim, use_sn):
-    with tf.variable_scope("discriminator_projection", reuse=tf.AUTO_REUSE):
+    with tf.compat.v1.variable_scope("discriminator_projection", reuse=tf.compat.v1.AUTO_REUSE):
       # We do not use ops.linear() below since it does not have an option to
       # override the initializer.
-      kernel = tf.get_variable(
+      kernel = tf.compat.v1.get_variable(
           "kernel", [y.shape[1], embedding_dim], tf.float32,
-          initializer=tf.initializers.glorot_normal())
+          initializer=tf.compat.v1.initializers.glorot_normal())
       if use_sn:
         kernel = ops.spectral_norm(kernel)
       embedded_y = tf.matmul(y, kernel)
@@ -285,19 +285,19 @@ class S3GAN(modular_gan.ModularGAN):
       labels_rotated = tf.constant(np.repeat(
           np.arange(NUM_ROTATIONS, dtype=np.int32), num_rot_examples))
       rot_onehot = tf.one_hot(labels_rotated, NUM_ROTATIONS)
-      rot_real_logp = tf.log(tf.nn.softmax(rot_real_logits) + 1e-10)
-      rot_fake_logp = tf.log(tf.nn.softmax(rot_fake_logits) + 1e-10)
+      rot_real_logp = tf.math.log(tf.nn.softmax(rot_real_logits) + 1e-10)
+      rot_fake_logp = tf.math.log(tf.nn.softmax(rot_fake_logits) + 1e-10)
       real_loss = -tf.reduce_mean(tf.reduce_sum(rot_onehot * rot_real_logp, 1))
       fake_loss = -tf.reduce_mean(tf.reduce_sum(rot_onehot * rot_fake_logp, 1))
       self.d_loss += real_loss * self._weight_rotation_loss_d
       self.g_loss += fake_loss * self._weight_rotation_loss_g
 
       rot_real_labels = tf.one_hot(
-          tf.arg_max(rot_real_logits, 1), NUM_ROTATIONS)
+          tf.argmax(rot_real_logits, 1), NUM_ROTATIONS)
       rot_fake_labels = tf.one_hot(
-          tf.arg_max(rot_fake_logits, 1), NUM_ROTATIONS)
-      accuracy_real = tf.metrics.accuracy(rot_onehot, rot_real_labels)
-      accuracy_fake = tf.metrics.accuracy(rot_onehot, rot_fake_labels)
+          tf.argmax(rot_fake_logits, 1), NUM_ROTATIONS)
+      accuracy_real = tf.compat.v1.metrics.accuracy(rot_onehot, rot_real_labels)
+      accuracy_fake = tf.compat.v1.metrics.accuracy(rot_onehot, rot_fake_labels)
 
       self._tpu_summary.scalar("loss/real_loss", real_loss)
       self._tpu_summary.scalar("loss/fake_loss", fake_loss)
@@ -312,7 +312,7 @@ class S3GAN(modular_gan.ModularGAN):
       is_label_available, _ = tf.split(is_label_available, 2)
       is_label_available = tf.squeeze(is_label_available[:bs])
 
-      class_loss_real = tf.losses.softmax_cross_entropy(
+      class_loss_real = tf.compat.v1.losses.softmax_cross_entropy(
           real_labels, real_aux_logits, weights=is_label_available)
 
       # Add the loss to the discriminator

@@ -61,25 +61,25 @@ class ArchOpsTpuTest(tf.test.TestCase):
     ]
     with self.session() as sess:
       devices = sess.list_devices()
-      tf.logging.info("devices:\n%s", "\n".join([str(d) for d in devices]))
+      tf.compat.v1.logging.info("devices:\n%s", "\n".join([str(d) for d in devices]))
       self.assertAllEqual([d.name for d in devices], expected_device_names)
 
   def testBatchNormOneCore(self):
     def computation(x):
-      core_bn = tf.layers.batch_normalization(x, training=True)
+      core_bn = tf.compat.v1.layers.batch_normalization(x, training=True)
       contrib_bn = tf.contrib.layers.batch_norm(x, is_training=True)
       custom_bn = arch_ops.batch_norm(x, is_training=True)
-      tf.logging.info("custom_bn tensor: %s", custom_bn)
+      tf.compat.v1.logging.info("custom_bn tensor: %s", custom_bn)
       return core_bn, contrib_bn, custom_bn
 
     with tf.Graph().as_default():
       x = tf.constant(self._inputs)
-      core_bn, contrib_bn, custom_bn = tf.contrib.tpu.batch_parallel(
+      core_bn, contrib_bn, custom_bn = tf.compat.v1.tpu.batch_parallel(
           computation, [x], num_shards=1)
 
       with self.session() as sess:
-        sess.run(tf.contrib.tpu.initialize_system())
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.tpu.initialize_system())
+        sess.run(tf.compat.v1.global_variables_initializer())
         core_bn, contrib_bn, custom_bn = sess.run(
             [core_bn, contrib_bn, custom_bn])
         logging.info("core_bn: %s", core_bn)
@@ -91,18 +91,18 @@ class ArchOpsTpuTest(tf.test.TestCase):
 
   def testBatchNormTwoCoresCoreAndContrib(self):
     def computation(x):
-      core_bn = tf.layers.batch_normalization(x, training=True)
+      core_bn = tf.compat.v1.layers.batch_normalization(x, training=True)
       contrib_bn = tf.contrib.layers.batch_norm(x, is_training=True)
       return core_bn, contrib_bn
 
     with tf.Graph().as_default():
       x = tf.constant(self._inputs)
-      core_bn, contrib_bn = tf.contrib.tpu.batch_parallel(
+      core_bn, contrib_bn = tf.compat.v1.tpu.batch_parallel(
           computation, [x], num_shards=2)
 
       with self.session() as sess:
-        sess.run(tf.contrib.tpu.initialize_system())
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.tpu.initialize_system())
+        sess.run(tf.compat.v1.global_variables_initializer())
         core_bn, contrib_bn = sess.run([core_bn, contrib_bn])
         logging.info("core_bn: %s", core_bn)
         logging.info("contrib_bn: %s", contrib_bn)
@@ -119,12 +119,12 @@ class ArchOpsTpuTest(tf.test.TestCase):
 
     with tf.Graph().as_default():
       x = tf.constant(self._inputs)
-      custom_bn, custom_bn_seq = tf.contrib.tpu.batch_parallel(
+      custom_bn, custom_bn_seq = tf.compat.v1.tpu.batch_parallel(
           computation, [x], num_shards=2)
 
       with self.session() as sess:
-        sess.run(tf.contrib.tpu.initialize_system())
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.tpu.initialize_system())
+        sess.run(tf.compat.v1.global_variables_initializer())
         custom_bn, custom_bn_seq = sess.run(
             [custom_bn, custom_bn_seq])
         logging.info("custom_bn: %s", custom_bn)

@@ -111,13 +111,13 @@ def get_real_images(dataset,
     ds = dataset.eval_input_fn(split=split)
     # Get real images from the dataset. In the case of a 1-channel
     # dataset (like MNIST) convert it to 3 channels.
-    next_batch = ds.make_one_shot_iterator().get_next()[0]
+    next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()[0]
     shape = [num_examples] + next_batch.shape.as_list()
     is_single_channel = shape[-1] == 1
     if is_single_channel:
       shape[-1] = 3
     real_images = np.empty(shape, dtype=np.float32)
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
       for i in range(num_examples):
         try:
           b = sess.run(next_batch)
@@ -164,8 +164,8 @@ def sample_fake_dataset(sess, generator, num_batches):
 
 def inception_transform(inputs):
   with tf.control_dependencies([
-      tf.assert_greater_equal(inputs, 0.0),
-      tf.assert_less_equal(inputs, 255.0)]):
+      tf.compat.v1.assert_greater_equal(inputs, 0.0),
+      tf.compat.v1.assert_less_equal(inputs, 255.0)]):
     inputs = tf.identity(inputs)
   preprocessed_inputs = tf.map_fn(
       fn=tfgan.eval.preprocess_image, elems=inputs, back_prop=False)
@@ -188,8 +188,8 @@ def inception_transform_np(inputs, batch_size):
   Returns:
     A tuple of NumPy arrays with Inception features and logits for each input.
   """
-  with tf.Session(graph=tf.Graph()) as sess:
-    inputs_placeholder = tf.placeholder(
+  with tf.compat.v1.Session(graph=tf.Graph()) as sess:
+    inputs_placeholder = tf.compat.v1.placeholder(
         dtype=tf.float32, shape=[None] + list(inputs[0].shape))
     features_and_logits = inception_transform(inputs_placeholder)
     features = []

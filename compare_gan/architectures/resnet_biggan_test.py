@@ -48,7 +48,7 @@ def guess_initializer(var, graph=None):
     Tuple of the name of the guessed initializer.
   """
   if graph is None:
-    graph = tf.get_default_graph()
+    graph = tf.compat.v1.get_default_graph()
   prefix = var.op.name + "/Initializer"
   ops = [op for op in graph.get_operations()
          if op.name.startswith(prefix)]
@@ -101,7 +101,7 @@ class ResNet5BigGanTest(tf.test.TestCase):
       predictions = discriminator(fake_images, y, is_training=True)
       self.assertLen(predictions, 3)
 
-      t_vars = tf.trainable_variables()
+      t_vars = tf.compat.v1.trainable_variables()
       g_vars = [var for var in t_vars if "generator" in var.name]
       d_vars = [var for var in t_vars if "discriminator" in var.name]
       g_param_overview = utils.get_parameter_overview(g_vars, limit=None)
@@ -165,7 +165,7 @@ class ResNet5BigGanTest(tf.test.TestCase):
       discriminator = resnet_biggan.Discriminator()
       discriminator(fake_images, y, is_training=True)
 
-      for v in tf.trainable_variables():
+      for v in tf.compat.v1.trainable_variables():
         parts = v.op.name.split("/")
         layer, var_name = parts[-2], parts[-1]
         initializer_name = guess_initializer(v)

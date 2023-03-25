@@ -40,7 +40,7 @@ class AbstractGAN(object):
 
   def as_estimator(self, run_config, batch_size, use_tpu):
     """Returns a TPUEstimator for this GAN."""
-    return tf.contrib.tpu.TPUEstimator(
+    return tf.compat.v1.estimator.tpu.TPUEstimator(
         config=run_config,
         use_tpu=use_tpu,
         model_fn=self.model_fn,

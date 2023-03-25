@@ -103,7 +103,7 @@ def _get_seed(name=None):
   # Get a seed from the hash name of a dummy operation. This seed will only
   # depend on the name of the operation (incl. the scope name). It will be
   # unique within the graph and only change if the name of operation changes.
-  with tf.name_scope("dummy_for_seed"):
+  with tf.compat.v1.name_scope("dummy_for_seed"):
     dummy_op = tf.no_op(name)
   # Using SHA-512 gives us a non-negative and uniformly distributed seed in the
   # interval [0, 2**512). This is consistent with TensorFlow, as TensorFlow

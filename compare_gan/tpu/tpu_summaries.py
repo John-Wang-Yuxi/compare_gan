@@ -92,7 +92,7 @@ class TpuSummaries(object):
     """Returns the tuple (host_call_fn, host_call_args) for TPUEstimatorSpec."""
     # All host_call_args must be tensors with batch dimension.
     # All tensors are streamed to the host machine (mind the band width).
-    global_step = tf.train.get_or_create_global_step()
+    global_step = tf.compat.v1.train.get_or_create_global_step()
     host_call_args = [tf.expand_dims(global_step, 0)]
     host_call_args.extend([e.tensor for e in self._entries])
     logging.info("host_call_args: %s", host_call_args)

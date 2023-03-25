@@ -45,7 +45,7 @@ def unpool(value, name="unpool"):
   Returns:
     A Tensor of shape [b, 2*d0, 2*d1, ..., 2*dn, ch]
   """
-  with tf.name_scope(name) as scope:
+  with tf.compat.v1.name_scope(name) as scope:
     sh = value.get_shape().as_list()
     dim = len(sh[1:-1])
     out = (tf.reshape(value, [-1] + sh[-dim:]))
@@ -129,7 +129,7 @@ class ResNetBlock(object):
         use_sn=self._spectral_norm,
         name="{}_{}".format("same" if scale == "none" else scale, suffix))
     if scale == "down":
-      outputs = tf.nn.pool(outputs, [2, 2], "AVG", "SAME", strides=[2, 2],
+      outputs = tf.nn.pool(outputs, [2, 2], "AVG", padding="SAME", strides=[2, 2],
                            name="pool_%s" % suffix)
     return outputs
 
@@ -150,7 +150,7 @@ class ResNetBlock(object):
     if inputs.get_shape().as_list()[-1] != self._in_channels:
       raise ValueError("Unexpected number of input channels.")
 
-    with tf.variable_scope(self._name, values=[inputs]):
+    with tf.compat.v1.variable_scope(self._name, values=[inputs]):
       output = inputs
 
       shortcut = self._get_conv(

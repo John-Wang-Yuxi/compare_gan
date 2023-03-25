@@ -115,7 +115,7 @@ class BigGanResNetBlock(resnet_ops.ResNetBlock):
           "Unexpected number of input channels (expected {}, got {}).".format(
               self._in_channels, inputs.shape[-1].value))
 
-    with tf.variable_scope(self._name, values=[inputs]):
+    with tf.compat.v1.variable_scope(self._name, values=[inputs]):
       outputs = inputs
 
       outputs = self.batch_norm(
@@ -408,13 +408,13 @@ class Discriminator(abstract_arch.AbstractDiscriminator):
     if self._project_y:
       if y is None:
         raise ValueError("You must provide class information y to project.")
-      with tf.variable_scope("embedding_fc"):
+      with tf.compat.v1.variable_scope("embedding_fc"):
         y_embedding_dim = out_channels[-1]
         # We do not use ops.linear() below since it does not have an option to
         # override the initializer.
-        kernel = tf.get_variable(
+        kernel = tf.compat.v1.get_variable(
             "kernel", [y.shape[1], y_embedding_dim], tf.float32,
-            initializer=tf.initializers.glorot_normal())
+            initializer=tf.compat.v1.initializers.glorot_normal())
         if self._spectral_norm:
           kernel = ops.spectral_norm(kernel)
         embedded_y = tf.matmul(y, kernel)

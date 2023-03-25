@@ -50,7 +50,7 @@ def _compute_multiscale_ssim_score(fake_images):
   """Compute ms-ssim score ."""
   batch_size = 64
   with tf.Graph().as_default():
-    fake_images_batch = tf.train.shuffle_batch(
+    fake_images_batch = tf.compat.v1.train.shuffle_batch(
         [tf.convert_to_tensor(fake_images, dtype=tf.float32)],
         capacity=16*batch_size,
         min_after_dequeue=8*batch_size,
@@ -62,7 +62,7 @@ def _compute_multiscale_ssim_score(fake_images):
     # evaluate 5 batches of the generated images.
     eval_fn = compute_msssim(
         generated_images=fake_images_batch, num_batches=5)
-    with tf.train.MonitoredTrainingSession() as sess:
+    with tf.compat.v1.train.MonitoredTrainingSession() as sess:
       score = eval_fn(sess)
   return score
 
@@ -95,7 +95,7 @@ def compute_msssim(generated_images, num_batches):
   # should get 1.0 from the MultiscaleSSIM)
   score = tf.reduce_sum(image_similarity.multiscale_ssim(pair1, pair2))
   score -= batch_size
-  score = tf.div(score, batch_size * batch_size - batch_size)
+  score = tf.compat.v1.div(score, batch_size * batch_size - batch_size)
 
   # Define a function which wraps some session.run calls to generate a large
   # number of images and compute multiscale ssim metric on them.

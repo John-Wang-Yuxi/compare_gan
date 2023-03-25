@@ -39,7 +39,7 @@ def _preprocess_fn_id(images, labels):
 
 def _preprocess_fn_add_noise(images, labels, seed=None):
   del labels
-  tf.set_random_seed(seed)
+  tf.compat.v1.set_random_seed(seed)
   noise = tf.random.uniform([128], maxval=1.0)
   return {"images": images}, noise
 
@@ -53,7 +53,7 @@ class DatasetsTest(parameterized.TestCase, tf.test.TestCase):
   def get_element_and_verify_shape(self, dataset_name, expected_shape):
     dataset = datasets.get_dataset(dataset_name)
     dataset = dataset.eval_input_fn()
-    image, label = dataset.make_one_shot_iterator().get_next()
+    image, label = tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
     # Check if shape is known at compile time, required for TPUs.
     self.assertAllEqual(image.shape.as_list(), expected_shape)
     self.assertEqual(image.dtype, tf.float32)
@@ -81,7 +81,7 @@ class DatasetsTest(parameterized.TestCase, tf.test.TestCase):
     with tf.Graph().as_default():
       dataset = dataset.input_fn(params={"batch_size": 1},
                                  preprocess_fn=preprocess_fn)
-      iterator = dataset.make_initializable_iterator()
+      iterator = tf.compat.v1.data.make_initializable_iterator(dataset)
       with self.session() as sess:
         sess.run(iterator.initializer)
         next_batch = iterator.get_next()

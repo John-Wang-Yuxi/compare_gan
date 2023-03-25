@@ -48,15 +48,15 @@ class SSGANTest(parameterized.TestCase, test_utils.CompareGanTestCase):
       gin.bind_parameter("penalty.fn", penalty_fn)
       gin.bind_parameter("loss.fn", loss_fn)
     model_dir = self._get_empty_model_dir()
-    run_config = tf.contrib.tpu.RunConfig(
+    run_config = tf.compat.v1.estimator.tpu.RunConfig(
         model_dir=model_dir,
-        tpu_config=tf.contrib.tpu.TPUConfig(iterations_per_loop=1))
+        tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(iterations_per_loop=1))
     dataset = datasets.get_dataset("cifar10")
     gan = SSGAN(
         dataset=dataset,
         parameters=parameters,
         model_dir=model_dir,
-        g_optimizer_fn=tf.train.AdamOptimizer,
+        g_optimizer_fn=tf.compat.v1.train.AdamOptimizer,
         g_lr=0.0002,
         rotated_batch_size=4)
     estimator = gan.as_estimator(run_config, batch_size=2, use_tpu=False)

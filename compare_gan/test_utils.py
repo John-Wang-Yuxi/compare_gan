@@ -46,10 +46,10 @@ def create_fake_inception_graph():
   """
   fake_inception = tf.Graph()
   with fake_inception.as_default():
-    graph_input = tf.placeholder(
+    graph_input = tf.compat.v1.placeholder(
         tf.float32, shape=[None, 299, 299, 3], name="Mul")
     matrix = tf.ones(shape=[299 * 299 * 3, 10]) * 0.00001
-    output = tf.matmul(tf.layers.flatten(graph_input), matrix)
+    output = tf.matmul(tf.compat.v1.layers.flatten(graph_input), matrix)
     output = tf.identity(output, name="pool_3")
     output = tf.identity(output, name="logits")
   return fake_inception.as_graph_def()
@@ -103,5 +103,5 @@ class CompareGanTestCase(tf.test.TestCase):
   def _get_empty_model_dir(self):
     unused_sub_dir = str(datetime.datetime.now().microsecond)
     model_dir = os.path.join(FLAGS.test_tmpdir, unused_sub_dir)
-    assert not tf.gfile.Exists(model_dir)
+    assert not tf.io.gfile.exists(model_dir)
     return model_dir

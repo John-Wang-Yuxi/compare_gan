@@ -52,14 +52,14 @@ class TpuOpsTpuTest(parameterized.TestCase, tf.test.TestCase):
     with tf.Graph().as_default():
       x = tf.constant(inputs)
       replica_ids = tf.constant([0, 1], dtype=tf.int32)
-      x_concat, = tf.contrib.tpu.batch_parallel(
+      x_concat, = tf.compat.v1.tpu.batch_parallel(
           computation, [x, replica_ids], num_shards=2)
       self.assertAllEqual(x.shape.as_list(), [2, 2])
       self.assertAllEqual(x_concat.shape.as_list(), [4, 2])
 
       with self.session() as sess:
-        sess.run(tf.contrib.tpu.initialize_system())
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.tpu.initialize_system())
+        sess.run(tf.compat.v1.global_variables_initializer())
         x_concat = sess.run(x_concat)
         logging.info("x_concat: %s", x_concat)
         self.assertAllClose(x_concat, expected_output)
@@ -89,10 +89,10 @@ class TpuOpsTpuTest(parameterized.TestCase, tf.test.TestCase):
     with tf.Graph().as_default():
       # Note: Using placeholders for feeding TPUs is discouraged but fine for
       # a simple test case.
-      x = tf.placeholder(name="x", dtype=tf.float32, shape=inputs.shape)
-      y = tf.contrib.tpu.batch_parallel(computation, inputs=[x], num_shards=2)
+      x = tf.compat.v1.placeholder(name="x", dtype=tf.float32, shape=inputs.shape)
+      y = tf.compat.v1.tpu.batch_parallel(computation, inputs=[x], num_shards=2)
       with self.session() as sess:
-        sess.run(tf.contrib.tpu.initialize_system())
+        sess.run(tf.compat.v1.tpu.initialize_system())
         # y is actually a list with one tensor. computation would be allowed
         # to return multiple tensors (and ops).
         actual_output = sess.run(y, {x: inputs})[0]
@@ -116,10 +116,10 @@ class TpuOpsTpuTest(parameterized.TestCase, tf.test.TestCase):
     with tf.Graph().as_default():
       # Note: Using placeholders for feeding TPUs is discouraged but fine for
       # a simple test case.
-      x = tf.placeholder(name="x", dtype=tf.float32, shape=inputs.shape)
-      y = tf.contrib.tpu.batch_parallel(computation, inputs=[x], num_shards=2)
+      x = tf.compat.v1.placeholder(name="x", dtype=tf.float32, shape=inputs.shape)
+      y = tf.compat.v1.tpu.batch_parallel(computation, inputs=[x], num_shards=2)
       with self.session() as sess:
-        sess.run(tf.contrib.tpu.initialize_system())
+        sess.run(tf.compat.v1.tpu.initialize_system())
         # y is actually a list with one tensor. computation would be allowed
         # to return multiple tensors (and ops).
         actual_output = sess.run(y, {x: inputs})[0]

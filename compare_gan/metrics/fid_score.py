@@ -66,7 +66,7 @@ def compute_fid_from_activations(fake_activations, real_activations):
   """
   logging.info("Computing FID score.")
   assert fake_activations.shape == real_activations.shape
-  with tf.Session(graph=tf.Graph()) as sess:
+  with tf.compat.v1.Session(graph=tf.Graph()) as sess:
     fake_activations = tf.convert_to_tensor(fake_activations)
     real_activations = tf.convert_to_tensor(real_activations)
     fid = tfgan.eval.frechet_classifier_distance_from_activations(

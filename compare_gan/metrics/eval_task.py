@@ -57,8 +57,8 @@ class EvalTask(object):
     try:
       target = FLAGS.master
     except AttributeError:
-      return tf.Session()
-    return tf.Session(target)
+      return tf.compat.v1.Session()
+    return tf.compat.v1.Session(target)
 
   @abc.abstractmethod
   def run_after_session(self, fake_dset, real_dset):

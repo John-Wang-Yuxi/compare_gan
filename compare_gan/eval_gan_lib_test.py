@@ -56,10 +56,10 @@ def create_fake_inception_graph():
   """
   fake_inception = tf.Graph()
   with fake_inception.as_default():
-    inputs = tf.placeholder(
+    inputs = tf.compat.v1.placeholder(
         tf.float32, shape=[None, 299, 299, 3], name="Mul")
     w = tf.ones(shape=[299 * 299 * 3, 10]) * 0.00001
-    outputs = tf.matmul(tf.layers.flatten(inputs), w)
+    outputs = tf.matmul(tf.compat.v1.layers.flatten(inputs), w)
     tf.identity(outputs, name="pool_3")
     tf.identity(outputs, name="logits")
   return fake_inception.as_graph_def()
@@ -90,9 +90,9 @@ class EvalGanLibTest(parameterized.TestCase, tf.test.TestCase):
         "disc_iters": 1,
         "lambda": 1,
     }
-    model_dir = os.path.join(tf.test.get_temp_dir(), self.id())
-    tf.logging.info("model_dir: %s" % model_dir)
-    run_config = tf.contrib.tpu.RunConfig(model_dir=model_dir)
+    model_dir = os.path.join(tf.compat.v1.test.get_temp_dir(), self.id())
+    tf.compat.v1.logging.info("model_dir: %s" % model_dir)
+    run_config = tf.compat.v1.estimator.tpu.RunConfig(model_dir=model_dir)
     gan = ModularGAN(dataset=dataset,
                      parameters=options,
                      conditional="biggan" in architecture,
@@ -112,7 +112,7 @@ class EvalGanLibTest(parameterized.TestCase, tf.test.TestCase):
     ]
     result_dict = eval_gan_lib.evaluate_tfhub_module(
         export_path, eval_tasks, use_tpu=False, num_averaging_runs=1)
-    tf.logging.info("result_dict: %s", result_dict)
+    tf.compat.v1.logging.info("result_dict: %s", result_dict)
     for score in ["fid_score", "fractal_dimension", "inception_score",
                   "ms_ssim"]:
       for stats in ["mean", "std", "list"]:

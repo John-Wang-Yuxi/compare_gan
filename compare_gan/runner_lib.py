@@ -57,7 +57,7 @@ class _DummyParserDelegate(gin.config_parser.ParserDelegate):
 
 def _parse_gin_config(config_path):
   """Parses a Gin config into a dictionary. All values are strings."""
-  with tf.gfile.Open(config_path) as f:
+  with tf.io.gfile.GFile(config_path) as f:
     config_str = f.read()
   parser = gin.config_parser.ConfigParser(config_str, _DummyParserDelegate())
   config = {}
@@ -122,11 +122,11 @@ class TaskManager(object):
     return self._model_dir
 
   def mark_training_done(self):
-    with tf.gfile.Open(os.path.join(self.model_dir, "TRAIN_DONE"), "w") as f:
+    with tf.io.gfile.GFile(os.path.join(self.model_dir, "TRAIN_DONE"), "w") as f:
       f.write("")
 
   def is_training_done(self):
-    return tf.gfile.Exists(os.path.join(self.model_dir, "TRAIN_DONE"))
+    return tf.io.gfile.exists(os.path.join(self.model_dir, "TRAIN_DONE"))
 
   def add_eval_result(self, checkpoint_path, result_dict, default_value):
     pass
@@ -194,7 +194,7 @@ class TaskManagerWithCsvResults(TaskManager):
 
   def _get_config_for_step(self, step):
     """Returns the latest operative config for the global step as dictionary."""
-    saved_configs = tf.gfile.Glob(
+    saved_configs = tf.io.gfile.glob(
         os.path.join(self.model_dir, "operative_config-*.gin"))
     get_step = lambda fn: int(re.findall(r"operative_config-(\d+).gin", fn)[0])
     config_steps = [get_step(fn) for fn in saved_configs]
@@ -209,9 +209,9 @@ class TaskManagerWithCsvResults(TaskManager):
     config = self._get_config_for_step(step)
     csv_header = (
         ["checkpoint_path", "step"] + sorted(result_dict) + sorted(config))
-    write_header = not tf.gfile.Exists(self._score_file)
+    write_header = not tf.io.gfile.exists(self._score_file)
     if write_header:
-      with tf.gfile.Open(self._score_file, "w") as f:
+      with tf.io.gfile.GFile(self._score_file, "w") as f:
         writer = csv.DictWriter(f, fieldnames=csv_header, extrasaction="ignore")
         writer.writeheader()
     row = dict(checkpoint_path=checkpoint_path, step=step, **config)
@@ -219,14 +219,14 @@ class TaskManagerWithCsvResults(TaskManager):
       if isinstance(v, float):
         v = "{:.3f}".format(v)
       row[k] = v
-    with tf.gfile.Open(self._score_file, "a") as f:
+    with tf.io.gfile.GFile(self._score_file, "a") as f:
       writer = csv.DictWriter(f, fieldnames=csv_header, extrasaction="ignore")
       writer.writerow(row)
 
   def get_checkpoints_with_results(self):
-    if not tf.gfile.Exists(self._score_file):
+    if not tf.io.gfile.exists(self._score_file):
       return set()
-    with tf.gfile.Open(self._score_file) as f:
+    with tf.io.gfile.GFile(self._score_file) as f:
       reader = csv.DictReader(f)
       return {r["checkpoint_path"] for r in reader}
     return set()
@@ -260,7 +260,7 @@ def _run_eval(module_spec, checkpoints, task_manager, run_config,
     if step == 0:
       continue
     export_path = os.path.join(run_config.model_dir, "tfhub", str(step))
-    if not tf.gfile.Exists(export_path):
+    if not tf.io.gfile.exists(export_path):
       module_spec.export(export_path, checkpoint_path=checkpoint_path)
     default_value = -1.0
     try:

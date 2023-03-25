@@ -35,9 +35,9 @@ class ModularGanTpuTest(parameterized.TestCase, test_utils.CompareGanTestCase):
   def setUp(self):
     super(ModularGanTpuTest, self).setUp()
     self.model_dir = self._get_empty_model_dir()
-    self.run_config = tf.contrib.tpu.RunConfig(
+    self.run_config = tf.compat.v1.estimator.tpu.RunConfig(
         model_dir=self.model_dir,
-        tpu_config=tf.contrib.tpu.TPUConfig(iterations_per_loop=1))
+        tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(iterations_per_loop=1))
 
   @parameterized.parameters([1, 2, 5])
   def testBatchSize(self, disc_iters, use_tpu=True):

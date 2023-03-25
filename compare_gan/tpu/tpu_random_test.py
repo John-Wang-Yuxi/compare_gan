@@ -58,26 +58,26 @@ class TpuRandomTest(parameterized.TestCase, tf.test.TestCase):
       # Set the random offset tensor for operations in tpu_random.py.
       tpu_random.set_random_offset_from_features(features)
       test_op = create_op_fn()
-      predictions = tf.layers.dense(features["x"], 1)
-      loss = tf.losses.mean_squared_error(labels, predictions)
-      optimizer = tf.train.GradientDescentOptimizer(0.01)
+      predictions = tf.compat.v1.layers.dense(features["x"], 1)
+      loss = tf.compat.v1.losses.mean_squared_error(labels, predictions)
+      optimizer = tf.compat.v1.train.GradientDescentOptimizer(0.01)
       if params["use_tpu"]:
-        optimizer = tf.contrib.tpu.CrossShardOptimizer(optimizer)
+        optimizer = tf.compat.v1.tpu.CrossShardOptimizer(optimizer)
       with tf.control_dependencies([test_op]):
         train_op = optimizer.minimize(
-            loss, global_step=tf.train.get_or_create_global_step())
-      return tf.contrib.tpu.TPUEstimatorSpec(
+            loss, global_step=tf.compat.v1.train.get_or_create_global_step())
+      return tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
           mode=mode,
           loss=loss,
           train_op=train_op)
 
-    if tf.gfile.Exists(model_dir):
-      tf.gfile.DeleteRecursively(model_dir)
-    run_config = tf.contrib.tpu.RunConfig(
+    if tf.io.gfile.exists(model_dir):
+      tf.io.gfile.rmtree(model_dir)
+    run_config = tf.compat.v1.estimator.tpu.RunConfig(
         model_dir=model_dir,
         save_checkpoints_steps=1,
-        tpu_config=tf.contrib.tpu.TPUConfig(iterations_per_loop=1))
-    estimator = tf.contrib.tpu.TPUEstimator(
+        tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(iterations_per_loop=1))
+    estimator = tf.compat.v1.estimator.tpu.TPUEstimator(
         config=run_config,
         use_tpu=use_tpu,
         model_fn=model_fn,
@@ -90,11 +90,11 @@ class TpuRandomTest(parameterized.TestCase, tf.test.TestCase):
   )
   def testIsDeterministic(self, use_tpu):
     def create_op_fn():
-      z = tf.get_variable("z", (3,), tf.float32)
+      z = tf.compat.v1.get_variable("z", (3,), tf.float32)
       random_z = tpu_random.uniform((3,), name="random_z")
       if use_tpu:
-        random_z = tf.contrib.tpu.cross_replica_sum(random_z)
-      return tf.assign(z, random_z).op
+        random_z = tf.compat.v1.tpu.cross_replica_sum(random_z)
+      return tf.compat.v1.assign(z, random_z).op
 
     model_dir_1 = os.path.join(FLAGS.test_tmpdir, "1")
     self._run_graph_op_in_estimator(create_op_fn, model_dir_1, use_tpu=use_tpu)
@@ -103,7 +103,7 @@ class TpuRandomTest(parameterized.TestCase, tf.test.TestCase):
     self._run_graph_op_in_estimator(create_op_fn, model_dir_2, use_tpu=use_tpu)
 
     for step in range(1, 5):
-      self.assertTrue(tf.gfile.Exists(
+      self.assertTrue(tf.io.gfile.exists(
           os.path.join(model_dir_1, "model.ckpt-{}.index".format(step))))
       ckpt_1 = tf.train.load_checkpoint(
           os.path.join(model_dir_1, "model.ckpt-{}".format(step)))
@@ -121,18 +121,18 @@ class TpuRandomTest(parameterized.TestCase, tf.test.TestCase):
   )
   def testIsDifferentAcrossSteps(self, use_tpu):
     def create_op_fn():
-      z = tf.get_variable("z", (3,), tf.float32)
+      z = tf.compat.v1.get_variable("z", (3,), tf.float32)
       random_z = tpu_random.uniform((3,), name="random_z")
       if use_tpu:
-        random_z = tf.contrib.tpu.cross_replica_sum(random_z)
-      return tf.assign(z, random_z).op
+        random_z = tf.compat.v1.tpu.cross_replica_sum(random_z)
+      return tf.compat.v1.assign(z, random_z).op
 
     model_dir = os.path.join(FLAGS.test_tmpdir, "1")
     self._run_graph_op_in_estimator(create_op_fn, model_dir, use_tpu=use_tpu)
 
     previous_z = None
     for step in range(1, 5):
-      self.assertTrue(tf.gfile.Exists(
+      self.assertTrue(tf.io.gfile.exists(
           os.path.join(model_dir, "model.ckpt-{}.index".format(step))))
       ckpt = tf.train.load_checkpoint(
           os.path.join(model_dir, "model.ckpt-{}".format(step)))
@@ -145,18 +145,18 @@ class TpuRandomTest(parameterized.TestCase, tf.test.TestCase):
 
   def testIsDifferentAcrossCores(self):
     def create_op_fn():
-      z_sum = tf.get_variable("z_sum", (3,), tf.float32)
-      z_first_core = tf.get_variable("z_first_core", (3,), tf.float32)
+      z_sum = tf.compat.v1.get_variable("z_sum", (3,), tf.float32)
+      z_first_core = tf.compat.v1.get_variable("z_first_core", (3,), tf.float32)
       random_z = tpu_random.uniform((3,), name="random_z")
-      random_z_sum = tf.contrib.tpu.cross_replica_sum(random_z)
-      return tf.group(tf.assign(z_sum, random_z_sum).op,
-                      tf.assign(z_first_core, random_z))
+      random_z_sum = tf.compat.v1.tpu.cross_replica_sum(random_z)
+      return tf.group(tf.compat.v1.assign(z_sum, random_z_sum).op,
+                      tf.compat.v1.assign(z_first_core, random_z))
 
     model_dir = os.path.join(FLAGS.test_tmpdir, "1")
     self._run_graph_op_in_estimator(create_op_fn, model_dir, use_tpu=True)
 
     for step in range(1, 5):
-      self.assertTrue(tf.gfile.Exists(
+      self.assertTrue(tf.io.gfile.exists(
           os.path.join(model_dir, "model.ckpt-{}.index".format(step))))
       ckpt = tf.train.load_checkpoint(
           os.path.join(model_dir, "model.ckpt-{}".format(step)))

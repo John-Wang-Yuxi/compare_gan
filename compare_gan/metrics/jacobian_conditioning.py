@@ -111,7 +111,7 @@ def compute_jacobian(xs, fx):
 
   # Iterates over all elements of the gradient and computes all partial
   # derivatives.
-  _, df_dxs = tf.while_loop(lambda j, _: j < n, accumulator, loop_vars)
+  _, df_dxs = tf.while_loop(cond=lambda j, _: j < n, body=accumulator, loop_vars=loop_vars)
 
   df_dx = df_dxs.stack()
   df_dx = tf.transpose(df_dx, perm=[1, 0, 2])

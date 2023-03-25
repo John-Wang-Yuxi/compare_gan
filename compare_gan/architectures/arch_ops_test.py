@@ -36,16 +36,16 @@ class ArchOpsTest(tf.test.TestCase):
       x = tf.stack([x1, x2, x3, x4])
       self.assertAllEqual(x.shape.as_list(), [4, 2, 1, 3])
 
-      core_bn = tf.layers.batch_normalization(x, training=True)
+      core_bn = tf.compat.v1.layers.batch_normalization(x, training=True)
       contrib_bn = tf.contrib.layers.batch_norm(x, is_training=True)
       custom_bn = arch_ops.batch_norm(x, is_training=True)
       with self.session() as sess:
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
         core_bn, contrib_bn, custom_bn = sess.run(
             [core_bn, contrib_bn, custom_bn])
-        tf.logging.info("core_bn: %s", core_bn[0])
-        tf.logging.info("contrib_bn: %s", contrib_bn[0])
-        tf.logging.info("custom_bn: %s", custom_bn[0])
+        tf.compat.v1.logging.info("core_bn: %s", core_bn[0])
+        tf.compat.v1.logging.info("contrib_bn: %s", contrib_bn[0])
+        tf.compat.v1.logging.info("custom_bn: %s", custom_bn[0])
         self.assertAllClose(core_bn, contrib_bn)
         self.assertAllClose(custom_bn, contrib_bn)
         expected_values = np.asarray(
@@ -62,17 +62,17 @@ class ArchOpsTest(tf.test.TestCase):
 
   def testAccumulatedMomentsDuringTraing(self):
     with tf.Graph().as_default():
-      mean_in = tf.placeholder(tf.float32, shape=[2])
-      variance_in = tf.placeholder(tf.float32, shape=[2])
+      mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
+      variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
       mean, variance = arch_ops._accumulated_moments_for_inference(
           mean=mean_in, variance=variance_in, is_training=True)
-      variables_by_name = {v.op.name: v for v in tf.global_variables()}
-      tf.logging.error(variables_by_name)
+      variables_by_name = {v.op.name: v for v in tf.compat.v1.global_variables()}
+      tf.compat.v1.logging.error(variables_by_name)
       accu_mean = variables_by_name["accu/accu_mean"]
       accu_variance = variables_by_name["accu/accu_variance"]
       accu_counter = variables_by_name["accu/accu_counter"]
       with self.session() as sess:
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
         m1, v1 = sess.run(
             [mean, variance],
             feed_dict={mean_in: [1.0, 2.0], variance_in: [3.0, 4.0]})
@@ -90,20 +90,20 @@ class ArchOpsTest(tf.test.TestCase):
 
   def testAccumulatedMomentsDuringEal(self):
     with tf.Graph().as_default():
-      mean_in = tf.placeholder(tf.float32, shape=[2])
-      variance_in = tf.placeholder(tf.float32, shape=[2])
+      mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
+      variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
       mean, variance = arch_ops._accumulated_moments_for_inference(
           mean=mean_in, variance=variance_in, is_training=False)
-      variables_by_name = {v.op.name: v for v in tf.global_variables()}
-      tf.logging.error(variables_by_name)
+      variables_by_name = {v.op.name: v for v in tf.compat.v1.global_variables()}
+      tf.compat.v1.logging.error(variables_by_name)
       accu_mean = variables_by_name["accu/accu_mean"]
       accu_variance = variables_by_name["accu/accu_variance"]
       accu_counter = variables_by_name["accu/accu_counter"]
       update_accus = variables_by_name["accu/update_accus"]
       with self.session() as sess:
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
         # Fill accumulators.
-        sess.run(tf.assign(update_accus, 1))
+        sess.run(tf.compat.v1.assign(update_accus, 1))
         m1, v1 = sess.run(
             [mean, variance],
             feed_dict={mean_in: [1.0, 2.0], variance_in: [3.0, 4.0]})
@@ -120,7 +120,7 @@ class ArchOpsTest(tf.test.TestCase):
         self.assertAllClose(av, [10.0, 12.0])
         self.assertAllClose([ac], [2.0])
         # Use accumulators.
-        sess.run(tf.assign(update_accus, 0))
+        sess.run(tf.compat.v1.assign(update_accus, 0))
         m3, v3 = sess.run(
             [mean, variance],
             feed_dict={mean_in: [2.0, 2.0], variance_in: [3.0, 3.0]})

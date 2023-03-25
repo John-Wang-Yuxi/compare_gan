@@ -264,7 +264,7 @@ def _multiscale_ssim_helper(
   shape2 = img2.get_shape().with_rank_at_least(3)
   shape1[-3:].merge_with(shape2[-3:])
 
-  with tf.name_scope(None, 'MS-SSIM', [img1, img2]):
+  with tf.name_scope(name='MS-SSIM'):
     shape1, shape2, checks = verify_compatible_shapes(img1, img2)
     with tf.control_dependencies(checks):
       img1 = tf.identity(img1)
@@ -288,7 +288,7 @@ def _multiscale_ssim_helper(
 
     mcs = []
     for k in range(len(power_factors)):
-      with tf.name_scope(None, 'Scale%d' % k, imgs):
+      with tf.name_scope(name='Scale%d' % k):
         if k > 0:
           # Avg pool takes rank 4 tensors. Flatten leading dimensions.
           flat_imgs = [
@@ -305,8 +305,8 @@ def _multiscale_ssim_helper(
           # pylint: enable=cell-var-from-loop
 
           downscaled = [
-              tf.nn.avg_pool(
-                  x, ksize=divisor, strides=divisor, padding='VALID')
+              tf.nn.avg_pool2d(
+                  input=x, ksize=divisor, strides=divisor, padding='VALID')
               for x in padded
           ]
           tails = [x[1:] for x in tf.shape_n(downscaled)]

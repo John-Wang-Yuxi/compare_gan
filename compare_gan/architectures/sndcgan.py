@@ -75,7 +75,7 @@ class Generator(abstract_arch.AbstractGenerator):
 
     # This normalization from [-1, 1] to [0, 1] is introduced for consistency
     # with other models.
-    out = tf.div(out + 1.0, 2.0)
+    out = tf.compat.v1.div(out + 1.0, 2.0)
     return out
 
 

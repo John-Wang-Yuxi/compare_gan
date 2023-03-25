@@ -75,19 +75,19 @@ def _update_bn_accumulators(sess, generated, num_accu_examples):
   """
   # Create update ops for batch statistic updates for each batch normalization
   # with accumlators.
-  update_accu_switches = [v for v in tf.global_variables()
+  update_accu_switches = [v for v in tf.compat.v1.global_variables()
                           if "accu/update_accus" in v.name]
   logging.info("update_accu_switches: %s", update_accu_switches)
   if not update_accu_switches:
     return False
-  sess.run([tf.assign(v, 1) for v in update_accu_switches])
+  sess.run([tf.compat.v1.assign(v, 1) for v in update_accu_switches])
   batch_size = generated.shape[0].value
   num_batches = num_accu_examples // batch_size
   for i in range(num_batches):
     if i % 500 == 0:
       logging.info("Updating BN accumulators %d/%d steps.", i, num_batches)
     sess.run(generated)
-  sess.run([tf.assign(v, 0) for v in update_accu_switches])
+  sess.run([tf.compat.v1.assign(v, 0) for v in update_accu_switches])
   logging.info("Done updating BN accumulators.")
   return True
 
@@ -120,10 +120,10 @@ def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
   result_dict = {}
   fake_dsets = []
   with tf.Graph().as_default():
-    tf.set_random_seed(42)
-    with tf.Session() as sess:
+    tf.compat.v1.set_random_seed(42)
+    with tf.compat.v1.Session() as sess:
       if use_tpu:
-        sess.run(tf.contrib.tpu.initialize_system())
+        sess.run(tf.compat.v1.tpu.initialize_system())
       def sample_from_generator():
         """Create graph for sampling images."""
         generator = hub.Module(
@@ -146,15 +146,15 @@ def evaluate_tfhub_module(module_spec, eval_tasks, use_tpu,
         return generator(inputs=inputs, as_dict=True)["generated"]
       if use_tpu:
 
-        generated = tf.contrib.tpu.rewrite(sample_from_generator)
+        generated = tf.compat.v1.tpu.rewrite(sample_from_generator)
       else:
         generated = sample_from_generator()
 
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
 
 
       if _update_bn_accumulators(sess, generated, num_accu_examples=204800):
-        saver = tf.train.Saver()
+        saver = tf.compat.v1.train.Saver()
         save_path = os.path.join(module_spec, "model-with-accu.ckpt")
         checkpoint_path = saver.save(
             sess,

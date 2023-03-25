@@ -64,7 +64,7 @@ def non_saturating(d_real_logits, d_fake_logits, d_real=None, d_fake=None):
     A tuple consisting of the discriminator loss, discriminator's loss on the
     real samples and fake samples, and the generator's loss.
   """
-  with tf.name_scope("non_saturating_loss"):
+  with tf.compat.v1.name_scope("non_saturating_loss"):
     check_dimensions(d_real, d_fake, d_real_logits, d_fake_logits)
     d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
         logits=d_real_logits, labels=tf.ones_like(d_real_logits),
@@ -93,7 +93,7 @@ def wasserstein(d_real_logits, d_fake_logits, d_real=None, d_fake=None):
     A tuple consisting of the discriminator loss, discriminator's loss on the
     real samples and fake samples, and the generator's loss.
   """
-  with tf.name_scope("wasserstein_loss"):
+  with tf.compat.v1.name_scope("wasserstein_loss"):
     check_dimensions(d_real, d_fake, d_real_logits, d_fake_logits)
     d_loss_real = -tf.reduce_mean(d_real_logits)
     d_loss_fake = tf.reduce_mean(d_fake_logits)
@@ -116,7 +116,7 @@ def least_squares(d_real, d_fake, d_real_logits=None, d_fake_logits=None):
     A tuple consisting of the discriminator loss, discriminator's loss on the
     real samples and fake samples, and the generator's loss.
   """
-  with tf.name_scope("least_square_loss"):
+  with tf.compat.v1.name_scope("least_square_loss"):
     check_dimensions(d_real, d_fake, d_real_logits, d_fake_logits)
     d_loss_real = tf.reduce_mean(tf.square(d_real - 1.0))
     d_loss_fake = tf.reduce_mean(tf.square(d_fake))
@@ -139,7 +139,7 @@ def hinge(d_real_logits, d_fake_logits, d_real=None, d_fake=None):
     A tuple consisting of the discriminator loss, discriminator's loss on the
     real samples and fake samples, and the generator's loss.
   """
-  with tf.name_scope("hinge_loss"):
+  with tf.compat.v1.name_scope("hinge_loss"):
     check_dimensions(d_real, d_fake, d_real_logits, d_fake_logits)
     d_loss_real = tf.reduce_mean(tf.nn.relu(1.0 - d_real_logits))
     d_loss_fake = tf.reduce_mean(tf.nn.relu(1.0 + d_fake_logits))

@@ -25,13 +25,13 @@ import tensorflow as tf
 
 
 def check_folder(log_dir):
-  if not tf.gfile.IsDirectory(log_dir):
-    tf.gfile.MakeDirs(log_dir)
+  if not tf.io.gfile.isdir(log_dir):
+    tf.io.gfile.makedirs(log_dir)
   return log_dir
 
 
 def save_images(images, image_path):
-  with tf.gfile.Open(image_path, "wb") as f:
+  with tf.io.gfile.GFile(image_path, "wb") as f:
     scipy.misc.imsave(f, images * 255.0)
 
 
@@ -39,9 +39,9 @@ def rotate_images(images, rot90_scalars=(0, 1, 2, 3)):
   """Return the input image and its 90, 180, and 270 degree rotations."""
   images_rotated = [
       images,  # 0 degree
-      tf.image.flip_up_down(tf.image.transpose_image(images)),  # 90 degrees
+      tf.image.flip_up_down(tf.image.transpose(images)),  # 90 degrees
       tf.image.flip_left_right(tf.image.flip_up_down(images)),  # 180 degrees
-      tf.image.transpose_image(tf.image.flip_up_down(images))  # 270 degrees
+      tf.image.transpose(tf.image.flip_up_down(images))  # 270 degrees
   ]
 
   results = tf.stack([images_rotated[i] for i in rot90_scalars])

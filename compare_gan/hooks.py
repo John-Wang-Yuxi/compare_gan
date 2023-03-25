@@ -46,7 +46,7 @@ class AsyncCheckpointSaverHook(tf.contrib.tpu.AsyncCheckpointSaverHook):
     self._timer.update_last_triggered_step(last_triggered_step)
 
 
-class EveryNSteps(tf.train.SessionRunHook):
+class EveryNSteps(tf.estimator.SessionRunHook):
   """"Base class for hooks that execute callbacks every N steps.
 
   class MyHook(EveryNSteps):
@@ -66,11 +66,11 @@ class EveryNSteps(tf.train.SessionRunHook):
     Args:
       every_n_steps: `int`, the number of steps to allow between callbacks.
     """
-    self._timer = tf.train.SecondOrStepTimer(every_steps=every_n_steps)
+    self._timer = tf.estimator.SecondOrStepTimer(every_steps=every_n_steps)
     self._global_step_tensor = None
 
   def begin(self):
-    self._global_step_tensor = tf.train.get_global_step()
+    self._global_step_tensor = tf.compat.v1.train.get_global_step()
     if self._global_step_tensor is None:
       raise RuntimeError("Global step must be created to use EveryNSteps.")
 
@@ -83,7 +83,7 @@ class EveryNSteps(tf.train.SessionRunHook):
     Returns:
       None or a `SessionRunArgs` object.
     """
-    return tf.train.SessionRunArgs({"global_step": self._global_step_tensor})
+    return tf.estimator.SessionRunArgs({"global_step": self._global_step_tensor})
 
   def after_run(self, run_context, run_values):
     """Overrides `SessionRunHook.after_run`.

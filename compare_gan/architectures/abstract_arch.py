@@ -42,7 +42,7 @@ class _Module(object):
 
   @property
   def trainable_variables(self):
-    return [var for var in tf.trainable_variables() if self._name in var.name]
+    return [var for var in tf.compat.v1.trainable_variables() if self._name in var.name]
 
 
 @gin.configurable("G", blacklist=["name", "image_shape"])
@@ -68,8 +68,8 @@ class AbstractGenerator(_Module):
     self._batch_norm_fn = batch_norm_fn
     self._spectral_norm = spectral_norm
 
-  def __call__(self, z, y, is_training, reuse=tf.AUTO_REUSE):
-    with tf.variable_scope(self.name, values=[z, y], reuse=reuse):
+  def __call__(self, z, y, is_training, reuse=tf.compat.v1.AUTO_REUSE):
+    with tf.compat.v1.variable_scope(self.name, values=[z, y], reuse=reuse):
       outputs = self.apply(z=z, y=y, is_training=is_training)
     return outputs
 
@@ -113,8 +113,8 @@ class AbstractDiscriminator(_Module):
     self._layer_norm = layer_norm
     self._spectral_norm = spectral_norm
 
-  def __call__(self, x, y, is_training, reuse=tf.AUTO_REUSE):
-    with tf.variable_scope(self.name, values=[x, y], reuse=reuse):
+  def __call__(self, x, y, is_training, reuse=tf.compat.v1.AUTO_REUSE):
+    with tf.compat.v1.variable_scope(self.name, values=[x, y], reuse=reuse):
       outputs = self.apply(x=x, y=y, is_training=is_training)
     return outputs
 

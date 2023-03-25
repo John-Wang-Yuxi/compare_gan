@@ -51,7 +51,7 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
   def testWeightInitialization(self, seed1, seed2):
     gin.bind_parameter("dataset.name", "cifar10")
     gin.bind_parameter("ModularGAN.g_optimizer_fn",
-                       tf.train.GradientDescentOptimizer)
+                       tf.compat.v1.train.GradientDescentOptimizer)
     options = {
         "architecture": "resnet_cifar_arch",
         "batch_size": 2,
@@ -66,7 +66,7 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
     for i in range(2):
       model_dir = os.path.join(work_dir, str(i))
       seed = seeds[i]
-      run_config = tf.contrib.tpu.RunConfig(
+      run_config = tf.compat.v1.estimator.tpu.RunConfig(
           model_dir=model_dir, tf_random_seed=seed)
       task_manager = runner_lib.TaskManager(model_dir)
       runner_lib.run_with_schedule(
@@ -81,7 +81,7 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
     checkpoint_reader_0 = tf.train.load_checkpoint(checkpoint_path_0)
     checkpoint_reader_1 = tf.train.load_checkpoint(checkpoint_path_1)
     for name, _ in tf.train.list_variables(checkpoint_path_0):
-      tf.logging.info(name)
+      tf.compat.v1.logging.info(name)
       t0 = checkpoint_reader_0.get_tensor(name)
       t1 = checkpoint_reader_1.get_tensor(name)
       zero_initialized_vars = [
@@ -125,7 +125,7 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
     work_dir = self._get_empty_model_dir()
     for i in range(2):
       model_dir = os.path.join(work_dir, str(i))
-      run_config = tf.contrib.tpu.RunConfig(
+      run_config = tf.compat.v1.estimator.tpu.RunConfig(
           model_dir=model_dir, tf_random_seed=3)
       task_manager = runner_lib.TaskManager(model_dir)
       runner_lib.run_with_schedule(
@@ -141,7 +141,7 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
     checkpoint_reader_0 = tf.train.load_checkpoint(checkpoint_path_0)
     checkpoint_reader_1 = tf.train.load_checkpoint(checkpoint_path_1)
     for name, _ in tf.train.list_variables(checkpoint_path_0):
-      tf.logging.info(name)
+      tf.compat.v1.logging.info(name)
       t0 = checkpoint_reader_0.get_tensor(name)
       t1 = checkpoint_reader_1.get_tensor(name)
       self.assertAllClose(t0, t1, msg=name)
@@ -162,9 +162,9 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
         "z_dim": 128,
     }
     model_dir = self._get_empty_model_dir()
-    run_config = tf.contrib.tpu.RunConfig(
+    run_config = tf.compat.v1.estimator.tpu.RunConfig(
         model_dir=model_dir,
-        tpu_config=tf.contrib.tpu.TPUConfig(iterations_per_loop=1))
+        tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(iterations_per_loop=1))
     task_manager = runner_lib.TaskManager(model_dir)
     runner_lib.run_with_schedule(
         "eval_after_train",
@@ -179,7 +179,7 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
         "model.ckpt-0.index", "model.ckpt-0.meta",
         "model.ckpt-1.data-00000-of-00001", "model.ckpt-1.index",
         "model.ckpt-1.meta", "operative_config-0.gin", "tfhub"]
-    self.assertAllInSet(expected_files, tf.gfile.ListDirectory(model_dir))
+    self.assertAllInSet(expected_files, tf.io.gfile.listdir(model_dir))
 
   def testTrainAndEvalWithSpectralNormAndEma(self):
     gin.bind_parameter("dataset.name", "cifar10")
@@ -195,9 +195,9 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
         "z_dim": 128,
     }
     model_dir = self._get_empty_model_dir()
-    run_config = tf.contrib.tpu.RunConfig(
+    run_config = tf.compat.v1.estimator.tpu.RunConfig(
         model_dir=model_dir,
-        tpu_config=tf.contrib.tpu.TPUConfig(iterations_per_loop=1))
+        tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(iterations_per_loop=1))
     task_manager = runner_lib.TaskManager(model_dir)
     runner_lib.run_with_schedule(
         "eval_after_train",
@@ -212,7 +212,7 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
         "model.ckpt-0.index", "model.ckpt-0.meta",
         "model.ckpt-1.data-00000-of-00001", "model.ckpt-1.index",
         "model.ckpt-1.meta", "operative_config-0.gin", "tfhub"]
-    self.assertAllInSet(expected_files, tf.gfile.ListDirectory(model_dir))
+    self.assertAllInSet(expected_files, tf.io.gfile.listdir(model_dir))
 
   def testTrainAndEvalWithBatchNormAccu(self):
     gin.bind_parameter("dataset.name", "cifar10")
@@ -228,9 +228,9 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
         "z_dim": 128,
     }
     model_dir = self._get_empty_model_dir()
-    run_config = tf.contrib.tpu.RunConfig(
+    run_config = tf.compat.v1.estimator.tpu.RunConfig(
         model_dir=model_dir,
-        tpu_config=tf.contrib.tpu.TPUConfig(iterations_per_loop=1))
+        tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(iterations_per_loop=1))
     task_manager = runner_lib.TaskManager(model_dir)
     # Wrap _UpdateBnAccumulators to only perform one accumulator update step.
     # Otherwise the test case would time out.
@@ -252,7 +252,7 @@ class RunnerLibTest(parameterized.TestCase, test_utils.CompareGanTestCase):
         "model-with-accu.ckpt.index", "model-with-accu.ckpt.meta"]
     self.assertAllInSet(
         expected_tfhub_files,
-        tf.gfile.ListDirectory(os.path.join(model_dir, "tfhub/0")))
+        tf.io.gfile.listdir(os.path.join(model_dir, "tfhub/0")))
 
 
 if __name__ == "__main__":

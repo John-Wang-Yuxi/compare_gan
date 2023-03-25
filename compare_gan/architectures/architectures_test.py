@@ -49,7 +49,7 @@ class ArchitectureTest(parameterized.TestCase, tf.test.TestCase):
       # Check that G outputs valid pixel values (we use [0, 1] everywhere) and
       # D outputs a probablilty.
       with self.session() as sess:
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
         image, pred = sess.run([x, out])
         self.assertAllGreaterEqual(image, 0)
         self.assertAllLessEqual(image, 1)

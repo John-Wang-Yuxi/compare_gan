@@ -46,15 +46,15 @@ def cross_replica_concat(value, replica_id, num_replicas):
         value.shape.ndims))
   if num_replicas <= 1:
     return value
-  with tf.name_scope(None, "tpu_cross_replica_concat"):
+  with tf.name_scope(name="tpu_cross_replica_concat"):
     # Mask is one hot encoded position of the core_index.
-    mask = tf.to_float(tf.equal(tf.range(num_replicas), replica_id))
+    mask = tf.cast(tf.equal(tf.range(num_replicas), replica_id), dtype=tf.float32)
     # Expand dims with 1's to match rank of value.
     mask = tf.reshape(mask, [num_replicas] + [1] * value.shape.ndims)
     if value.dtype in {tf.bfloat16, tf.float32}:
       result = mask * value
     else:
-      result = mask * tf.to_float(value)
+      result = mask * tf.cast(value, dtype=tf.float32)
     # Thanks to broadcasting now result is set only in the position pointed by
     # replica_id, the rest of the vector is set to 0's.
     # All these steps are basically implementing tf.scatter_nd which is missing
@@ -67,7 +67,7 @@ def cross_replica_concat(value, replica_id, num_replicas):
     # Each core set the "results" in position pointed by replica_id. When we now
     # sum across replicas we exchange the information and fill in local 0's with
     # values from other cores.
-    result = tf.contrib.tpu.cross_replica_sum(result)
+    result = tf.compat.v1.tpu.cross_replica_sum(result)
     # Now all the cores see exactly the same data.
     return tf.cast(result, dtype=value.dtype)
 
@@ -87,7 +87,7 @@ def cross_replica_mean(inputs, group_size=None):
       group_assignment.append(replica_ids)
   else:
     group_assignment = None
-  return tf.contrib.tpu.cross_replica_sum(inputs, group_assignment) / tf.cast(
+  return tf.compat.v1.tpu.cross_replica_sum(inputs, group_assignment) / tf.cast(
       group_size, inputs.dtype)
 
 

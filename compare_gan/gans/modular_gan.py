@@ -67,7 +67,7 @@ class ModularGAN(AbstractGAN):
                g_use_ema=False,
                ema_decay=0.9999,
                ema_start_step=40000,
-               g_optimizer_fn=tf.train.AdamOptimizer,
+               g_optimizer_fn=tf.compat.v1.train.AdamOptimizer,
                d_optimizer_fn=None,
                g_lr=0.0002,
                d_lr=None,
@@ -216,7 +216,7 @@ class ModularGAN(AbstractGAN):
     """Returns a TPUEstimator for this GAN."""
     unroll_graph = self._experimental_force_graph_unroll or use_tpu
     num_sub_steps = self._get_num_sub_steps(unroll_graph=unroll_graph)
-    return tf.contrib.tpu.TPUEstimator(
+    return tf.compat.v1.estimator.tpu.TPUEstimator(
         config=run_config,
         use_tpu=use_tpu,
         model_fn=self.model_fn,
@@ -231,7 +231,7 @@ class ModularGAN(AbstractGAN):
     """
     if model not in {"gen", "disc"}:
       raise ValueError("Model {} not support in module_fn()".format(model))
-    placeholder_fn = tf.placeholder if batch_size is None else tf.zeros
+    placeholder_fn = tf.compat.v1.placeholder if batch_size is None else tf.zeros
     is_training = False
     inputs = {}
     y = None
@@ -264,7 +264,7 @@ class ModularGAN(AbstractGAN):
       z = inputs["z"]
       generated = self.generator(z=z, y=y, is_training=is_training)
       if self._g_use_ema and not is_training:
-        g_vars = [var for var in tf.trainable_variables()
+        g_vars = [var for var in tf.compat.v1.trainable_variables()
                   if "generator" in var.name]
         ema = tf.train.ExponentialMovingAverage(decay=self._ema_decay)
         # Create the variables that will be loaded from the checkpoint.
@@ -279,7 +279,7 @@ class ModularGAN(AbstractGAN):
               logging.warning("Could not find EMA variable for %s.", name)
             return var
           return ema_var
-        with tf.variable_scope("", values=[z, y], reuse=True,
+        with tf.compat.v1.variable_scope("", values=[z, y], reuse=True,
                                custom_getter=ema_getter):
           generated = self.generator(z, y=y, is_training=is_training)
       outputs["generated"] = generated
@@ -303,7 +303,7 @@ class ModularGAN(AbstractGAN):
       tags_and_args.append((tags, args))
     return hub.create_module_spec(
         self._module_fn, tags_and_args=tags_and_args,
-        drop_collections=[tf.GraphKeys.MOVING_AVERAGE_VARIABLES])
+        drop_collections=[tf.compat.v1.GraphKeys.MOVING_AVERAGE_VARIABLES])
 
   def _grid_shape(self, num_summary_images):
     """Returns the shape for a rectangle grid with `num_summarry_images`."""
@@ -344,7 +344,7 @@ class ModularGAN(AbstractGAN):
 
   def _check_variables(self):
     """Check that every variable belongs to either G or D."""
-    t_vars = tf.trainable_variables()
+    t_vars = tf.compat.v1.trainable_variables()
     g_vars = self.generator.trainable_variables
     d_vars = self.discriminator.trainable_variables
     shared_vars = set(d_vars) & set(g_vars)
@@ -394,7 +394,7 @@ class ModularGAN(AbstractGAN):
     """Creates the feature dictionary with images and z."""
     logging.info("_preprocess_fn(): images=%s, labels=%s, seed=%s",
                  images, labels, seed)
-    tf.set_random_seed(seed)
+    tf.compat.v1.set_random_seed(seed)
     features = {
         "images": images,
         "z": self.z_generator([self._z_dim], name="z"),
@@ -443,7 +443,7 @@ class ModularGAN(AbstractGAN):
 
     if self._experimental_joint_gen_for_disc:
       # Generate samples from G for D steps.
-      with tf.name_scope("gen_for_disc"):
+      with tf.compat.v1.name_scope("gen_for_disc"):
         # Only the last sub-step changes the generator weights. Thus we can
         # combine all forward passes through G to achieve better efficiency.
         # The forward pass for G's step needs to be separated since compute
@@ -457,7 +457,7 @@ class ModularGAN(AbstractGAN):
         for i in range(self._disc_iters):
           fs[i]["generated"] = generated[i]
       # Generate samples from G for G step.
-      with tf.name_scope("gen_for_gen"):
+      with tf.compat.v1.name_scope("gen_for_gen"):
         sampled_y = fs[-1].get("sampled_y", None)
         fs[-1]["generated"] = self.generator(
             fs[-1]["z"], y=sampled_y, is_training=True)
@@ -475,7 +475,7 @@ class ModularGAN(AbstractGAN):
     tpu_random.set_random_offset_from_features(features)
     # create_loss will set self.d_loss.
     self.create_loss(features, labels, params=params)
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
       train_op = optimizer.minimize(
           self.d_loss,
@@ -489,7 +489,7 @@ class ModularGAN(AbstractGAN):
     tpu_random.set_random_offset_from_features(features)
     # create_loss will set self.g_loss.
     self.create_loss(features, labels, params=params)
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
       train_op = optimizer.minimize(
           self.g_loss,
@@ -497,7 +497,7 @@ class ModularGAN(AbstractGAN):
           global_step=step)
       if self._g_use_ema:
         g_vars = self.generator.trainable_variables
-        with tf.name_scope("generator_ema"):
+        with tf.compat.v1.name_scope("generator_ema"):
           logging.info("Creating moving averages of weights: %s", g_vars)
           # The decay value is set to 0 if we're before the moving-average start
           # point, so that the EMA vars will be the normal vars.
@@ -547,7 +547,7 @@ class ModularGAN(AbstractGAN):
         features, labels, num_sub_steps=num_sub_steps)
 
     disc_optimizer = self.get_disc_optimizer(params["use_tpu"])
-    disc_step = tf.get_variable(
+    disc_step = tf.compat.v1.get_variable(
         "global_step_disc", [], dtype=tf.int32, trainable=False)
     train_disc_fn = functools.partial(
         self._train_discriminator,
@@ -556,7 +556,7 @@ class ModularGAN(AbstractGAN):
         params=params)
 
     gen_optimizer = self.get_gen_optimizer(params["use_tpu"])
-    gen_step = tf.train.get_or_create_global_step()
+    gen_step = tf.compat.v1.train.get_or_create_global_step()
     train_gen_fn = functools.partial(
         self._train_generator,
         features=fs[-1],
@@ -574,13 +574,13 @@ class ModularGAN(AbstractGAN):
     d_losses = []
     d_steps = self._disc_iters if unroll_graph else 1
     for i in range(d_steps):
-      with tf.name_scope("disc_step_{}".format(i + 1)):
+      with tf.compat.v1.name_scope("disc_step_{}".format(i + 1)):
         with tf.control_dependencies(d_losses):
           d_losses.append(train_disc_fn(features=fs[i], labels=ls[i]))
 
     # Train G.
     with tf.control_dependencies(d_losses):
-      with tf.name_scope("gen_step"):
+      with tf.compat.v1.name_scope("gen_step"):
         g_loss = train_gen_fn()
 
     for i, d_loss in enumerate(d_losses):
@@ -595,7 +595,7 @@ class ModularGAN(AbstractGAN):
     utils.log_parameter_overview(self.discriminator.trainable_variables,
                                  msg="Discriminator variables:")
 
-    return tf.contrib.tpu.TPUEstimatorSpec(
+    return tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
         mode=mode,
         host_call=self._tpu_summary.get_host_call(),
         # Estimator requires a loss which gets displayed on TensorBoard.
@@ -606,13 +606,13 @@ class ModularGAN(AbstractGAN):
   def get_disc_optimizer(self, use_tpu=True):
     opt = self._d_optimizer_fn(self._d_lr, name="d_opt")
     if use_tpu:
-      opt = tf.contrib.tpu.CrossShardOptimizer(opt)
+      opt = tf.compat.v1.tpu.CrossShardOptimizer(opt)
     return opt
 
   def get_gen_optimizer(self, use_tpu=True):
     opt = self._g_optimizer_fn(self._g_lr, name="g_opt")
     if use_tpu:
-      opt = tf.contrib.tpu.CrossShardOptimizer(opt)
+      opt = tf.compat.v1.tpu.CrossShardOptimizer(opt)
     return opt
 
   def create_loss(self, features, labels, params, is_training=True):
@@ -646,10 +646,10 @@ class ModularGAN(AbstractGAN):
       all_y = None
 
     if self._deprecated_split_disc_calls:
-      with tf.name_scope("disc_for_real"):
+      with tf.compat.v1.name_scope("disc_for_real"):
         d_real, d_real_logits, _ = self.discriminator(
             images, y=y, is_training=is_training)
-      with tf.name_scope("disc_for_fake"):
+      with tf.compat.v1.name_scope("disc_for_fake"):
         d_fake, d_fake_logits, _ = self.discriminator(
             generated, y=sampled_y, is_training=is_training)
     else:

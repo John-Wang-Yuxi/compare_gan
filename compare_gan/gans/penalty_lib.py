@@ -43,7 +43,7 @@ def dragan_penalty(discriminator, x, y, is_training):
   Returns:
     A tensor with the computed penalty.
   """
-  with tf.name_scope("dragan_penalty"):
+  with tf.compat.v1.name_scope("dragan_penalty"):
     _, var = tf.nn.moments(x, axes=list(range(len(x.get_shape()))))
     std = tf.sqrt(var)
     x_noisy = x + std * (ops.random_uniform(x.shape) - 0.5)
@@ -51,7 +51,7 @@ def dragan_penalty(discriminator, x, y, is_training):
     logits = discriminator(x_noisy, y=y, is_training=is_training, reuse=True)[1]
     gradients = tf.gradients(logits, [x_noisy])[0]
     slopes = tf.sqrt(0.0001 + tf.reduce_sum(
-        tf.square(gradients), reduction_indices=[1, 2, 3]))
+        tf.square(gradients), axis=[1, 2, 3]))
     gradient_penalty = tf.reduce_mean(tf.square(slopes - 1.0))
     return gradient_penalty
 
@@ -70,14 +70,14 @@ def wgangp_penalty(discriminator, x, x_fake, y, is_training):
   Returns:
     A tensor with the computed penalty.
   """
-  with tf.name_scope("wgangp_penalty"):
+  with tf.compat.v1.name_scope("wgangp_penalty"):
     alpha = ops.random_uniform(shape=[x.shape[0].value, 1, 1, 1], name="alpha")
     interpolates = x + alpha * (x_fake - x)
     logits = discriminator(
         interpolates, y=y, is_training=is_training, reuse=True)[1]
     gradients = tf.gradients(logits, [interpolates])[0]
     slopes = tf.sqrt(0.0001 + tf.reduce_sum(
-        tf.square(gradients), reduction_indices=[1, 2, 3]))
+        tf.square(gradients), axis=[1, 2, 3]))
     gradient_penalty = tf.reduce_mean(tf.square(slopes - 1.0))
     return gradient_penalty
 
@@ -95,7 +95,7 @@ def l2_penalty(discriminator):
   Returns:
      A tensor with the computed penalty.
   """
-  with tf.name_scope("l2_penalty"):
+  with tf.compat.v1.name_scope("l2_penalty"):
     d_weights = [v for v in discriminator.trainable_variables
                  if v.name.endswith("/kernel:0")]
     return tf.reduce_mean(

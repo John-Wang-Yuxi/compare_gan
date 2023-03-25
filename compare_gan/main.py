@@ -71,7 +71,7 @@ def _get_cluster():
     return None
   if "TPU_NAME" not in os.environ:
     raise ValueError("Could not find a TPU. Set TPU_NAME.")
-  return tf.contrib.cluster_resolver.TPUClusterResolver(
+  return tf.distribute.cluster_resolver.TPUClusterResolver(
       tpu=os.environ["TPU_NAME"],
       zone=os.environ.get("TPU_ZONE", None))
 
@@ -83,10 +83,10 @@ def _get_run_config(tf_random_seed=None,
                     save_checkpoints_steps=5000,
                     keep_checkpoint_max=1000):
   """Return `RunConfig` for TPUs."""
-  tpu_config = tf.contrib.tpu.TPUConfig(
+  tpu_config = tf.compat.v1.estimator.tpu.TPUConfig(
       num_shards=1 if single_core else None,  # None = all cores.
       iterations_per_loop=iterations_per_loop)
-  return tf.contrib.tpu.RunConfig(
+  return tf.compat.v1.estimator.tpu.RunConfig(
       model_dir=FLAGS.model_dir,
       tf_random_seed=tf_random_seed,
       save_checkpoints_steps=save_checkpoints_steps,

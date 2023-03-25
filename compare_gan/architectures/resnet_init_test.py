@@ -47,7 +47,7 @@ class ResNetInitTest(tf.test.TestCase):
       fake_image = resnet5.Generator(image_shape=(128, 128, 3))(
           z, y=None, is_training=True)
       resnet5.Discriminator()(fake_image, y=None, is_training=True)
-      for var in tf.trainable_variables():
+      for var in tf.compat.v1.trainable_variables():
         op_name = var.initializer.inputs[1].name
         self.assertRegex(op_name, valid_op_names)
 
@@ -67,7 +67,7 @@ class ResNetInitTest(tf.test.TestCase):
       fake_image = resnet5.Generator(image_shape=(128, 128, 3))(
           z, y=None, is_training=True)
       resnet5.Discriminator()(fake_image, y=None, is_training=True)
-      for var in tf.trainable_variables():
+      for var in tf.compat.v1.trainable_variables():
         op_name = var.initializer.inputs[1].name
         self.assertRegex(op_name, valid_op_names)
 
@@ -87,7 +87,7 @@ class ResNetInitTest(tf.test.TestCase):
       fake_image = resnet5.Generator(image_shape=(128, 128, 3))(
           z, y=None, is_training=True)
       resnet5.Discriminator()(fake_image, y=None, is_training=True)
-      for var in tf.trainable_variables():
+      for var in tf.compat.v1.trainable_variables():
         op_name = var.initializer.inputs[1].name
         self.assertRegex(op_name, valid_op_names)
 
@@ -107,7 +107,7 @@ class ResNetInitTest(tf.test.TestCase):
       fake_image = resnet5.Generator(image_shape=(128, 128, 3))(
           z, y=None, is_training=True)
       resnet5.Discriminator()(fake_image, y=None, is_training=True)
-      for var in tf.trainable_variables():
+      for var in tf.compat.v1.trainable_variables():
         op_name = var.initializer.inputs[1].name
         self.assertRegex(op_name, valid_op_names)
 

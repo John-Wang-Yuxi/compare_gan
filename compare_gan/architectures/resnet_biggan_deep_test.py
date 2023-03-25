@@ -42,7 +42,7 @@ class ResNet5BigGanDeepTest(tf.test.TestCase):
       predictions = discriminator(fake_images, y, is_training=True)
       self.assertLen(predictions, 3)
 
-      t_vars = tf.trainable_variables()
+      t_vars = tf.compat.v1.trainable_variables()
       g_vars = [var for var in t_vars if "generator" in var.name]
       d_vars = [var for var in t_vars if "discriminator" in var.name]
       g_param_overview = utils.get_parameter_overview(g_vars, limit=None)

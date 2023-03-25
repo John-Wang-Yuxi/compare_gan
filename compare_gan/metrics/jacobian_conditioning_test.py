@@ -52,11 +52,11 @@ def SlowJacobian(xs, fx):
 class JacobianConditioningTest(tf.test.TestCase):
 
   def test_jacobian_simple_case(self):
-    x = tf.random_normal([_BATCH_SIZE, 2])
+    x = tf.random.normal([_BATCH_SIZE, 2])
     W = tf.constant([[2., -1.], [1.5, 1.]])  # pylint: disable=invalid-name
     f = tf.matmul(x, W)
     j_tensor = jacobian_conditioning.compute_jacobian(xs=x, fx=f)
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
       jacobian = sess.run(j_tensor)
 
     # Transpose of W in 'expected' is expected because in vector notation
@@ -65,7 +65,7 @@ class JacobianConditioningTest(tf.test.TestCase):
     self.assertAllClose(jacobian, expected)
 
   def test_jacobian_against_slow_version(self):
-    x = tf.random_normal([_BATCH_SIZE, 2])
+    x = tf.random.normal([_BATCH_SIZE, 2])
     h1 = tf.contrib.layers.fully_connected(x, 20)
     h2 = tf.contrib.layers.fully_connected(h1, 20)
     f = tf.contrib.layers.fully_connected(h2, 10)
@@ -73,20 +73,20 @@ class JacobianConditioningTest(tf.test.TestCase):
     j_slow_tensor = SlowJacobian(xs=x, fx=f)
     j_fast_tensor = jacobian_conditioning.compute_jacobian(xs=x, fx=f)
 
-    with tf.Session() as sess:
-      sess.run(tf.global_variables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
       j_fast, j_slow = sess.run([j_fast_tensor, j_slow_tensor])
     self.assertAllClose(j_fast, j_slow)
 
   def test_jacobian_numerically(self):
-    x = tf.random_normal([_BATCH_SIZE, 2])
+    x = tf.random.normal([_BATCH_SIZE, 2])
     h1 = tf.contrib.layers.fully_connected(x, 20)
     h2 = tf.contrib.layers.fully_connected(h1, 20)
     f = tf.contrib.layers.fully_connected(h2, 10)
     j_tensor = jacobian_conditioning.compute_jacobian(xs=x, fx=f)
 
-    with tf.Session() as sess:
-      sess.run(tf.global_variables_initializer())
+    with tf.compat.v1.Session() as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
       x_np = sess.run(x)
       jacobian = sess.run(j_tensor, feed_dict={x: x_np})
 

@@ -134,8 +134,8 @@ def kid(fake_activations,
     k_rg = (tf.matmul(r, g, transpose_b=True) / dim_ + 1)**3
     k_gg = (tf.matmul(g, g, transpose_b=True) / dim_ + 1)**3
     return (
-        -2 * tf.reduce_mean(k_rg) + (tf.reduce_sum(k_rr) - tf.trace(k_rr)) /
-        (m * (m - 1)) + (tf.reduce_sum(k_gg) - tf.trace(k_gg)) / (n * (n - 1)))
+        -2 * tf.reduce_mean(k_rg) + (tf.reduce_sum(k_rr) - tf.linalg.trace(k_rr)) /
+        (m * (m - 1)) + (tf.reduce_sum(k_gg) - tf.linalg.trace(k_gg)) / (n * (n - 1)))
 
   ests = tf.map_fn(
       get_kid_batch, np.arange(n_bins), dtype=dtype, back_prop=False)

@@ -94,7 +94,7 @@ class SSGAN(modular_gan.ModularGAN):
     real_probs, real_scores, final = self.discriminator(
         x=x, y=y, is_training=is_training)
     use_sn = self._discriminator._spectral_norm  # pylint: disable=protected-access
-    with tf.variable_scope("discriminator_rotation", reuse=tf.AUTO_REUSE):
+    with tf.compat.v1.variable_scope("discriminator_rotation", reuse=tf.compat.v1.AUTO_REUSE):
       rotation_scores = linear(tf.reshape(final, (tf.shape(x)[0], -1)),
                                NUM_ROTATIONS,
                                scope="score_classify",
@@ -206,9 +206,9 @@ class SSGAN(modular_gan.ModularGAN):
       c_real_probs = tf.nn.softmax(c_real_logits)
       c_fake_probs = tf.nn.softmax(c_fake_logits)
       c_real_loss = - tf.reduce_mean(
-          tf.reduce_sum(rotate_labels_onehot * tf.log(c_real_probs + 1e-10), 1))
+          tf.reduce_sum(rotate_labels_onehot * tf.math.log(c_real_probs + 1e-10), 1))
       c_fake_loss = - tf.reduce_mean(
-          tf.reduce_sum(rotate_labels_onehot * tf.log(c_fake_probs + 1e-10), 1))
+          tf.reduce_sum(rotate_labels_onehot * tf.math.log(c_fake_probs + 1e-10), 1))
       if self._self_supervision == "rotation_only":
         self.d_loss *= 0.0
         self.g_loss *= 0.0

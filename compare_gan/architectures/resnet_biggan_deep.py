@@ -93,7 +93,7 @@ class BigGanDeepResNetBlock(object):
 
   def _shortcut(self, inputs):
     """Constructs a skip connection from inputs."""
-    with tf.variable_scope("shortcut", values=[inputs]):
+    with tf.compat.v1.variable_scope("shortcut", values=[inputs]):
       shortcut = inputs
       num_channels = inputs.shape[-1].value
       if num_channels > self._out_channels:
@@ -105,7 +105,7 @@ class BigGanDeepResNetBlock(object):
       if self._scale == "up":
         shortcut = resnet_ops.unpool(shortcut)
       if self._scale == "down":
-        shortcut = tf.nn.pool(shortcut, [2, 2], "AVG", "SAME",
+        shortcut = tf.nn.pool(shortcut, [2, 2], "AVG", padding="SAME",
                               strides=[2, 2], name="pool")
       if num_channels < self._out_channels:
         assert self._scale == "down"
@@ -142,31 +142,31 @@ class BigGanDeepResNetBlock(object):
     conv3x3 = functools.partial(ops.conv2d, k_h=3, k_w=3, d_h=1, d_w=1,
                                 use_sn=self._spectral_norm)
 
-    with tf.variable_scope(self._name, values=[inputs]):
+    with tf.compat.v1.variable_scope(self._name, values=[inputs]):
       outputs = inputs
 
-      with tf.variable_scope("conv1", values=[outputs]):
+      with tf.compat.v1.variable_scope("conv1", values=[outputs]):
         outputs = bn(outputs, name="bn")
         outputs = tf.nn.relu(outputs)
         outputs = conv1x1(outputs, bottleneck_channels, name="1x1_conv")
 
-      with tf.variable_scope("conv2", values=[outputs]):
+      with tf.compat.v1.variable_scope("conv2", values=[outputs]):
         outputs = bn(outputs, name="bn")
         outputs = tf.nn.relu(outputs)
         if self._scale == "up":
           outputs = resnet_ops.unpool(outputs)
         outputs = conv3x3(outputs, bottleneck_channels, name="3x3_conv")
 
-      with tf.variable_scope("conv3", values=[outputs]):
+      with tf.compat.v1.variable_scope("conv3", values=[outputs]):
         outputs = bn(outputs, name="bn")
         outputs = tf.nn.relu(outputs)
         outputs = conv3x3(outputs, bottleneck_channels, name="3x3_conv")
 
-      with tf.variable_scope("conv4", values=[outputs]):
+      with tf.compat.v1.variable_scope("conv4", values=[outputs]):
         outputs = bn(outputs, name="bn")
         outputs = tf.nn.relu(outputs)
         if self._scale == "down":
-          outputs = tf.nn.pool(outputs, [2, 2], "AVG", "SAME", strides=[2, 2],
+          outputs = tf.nn.pool(outputs, [2, 2], "AVG", padding="SAME", strides=[2, 2],
                                name="avg_pool")
         outputs = conv1x1(outputs, self._out_channels, name="1x1_conv")
 
@@ -416,13 +416,13 @@ class Discriminator(abstract_arch.AbstractDiscriminator):
     if self._project_y:
       if y is None:
         raise ValueError("You must provide class information y to project.")
-      with tf.variable_scope("embedding_fc"):
+      with tf.compat.v1.variable_scope("embedding_fc"):
         y_embedding_dim = out_channels[-1]
         # We do not use ops.linear() below since it does not have an option to
         # override the initializer.
-        kernel = tf.get_variable(
+        kernel = tf.compat.v1.get_variable(
             "kernel", [y.shape[1], y_embedding_dim], tf.float32,
-            initializer=tf.initializers.glorot_normal())
+            initializer=tf.compat.v1.initializers.glorot_normal())
         if self._spectral_norm:
           kernel = ops.spectral_norm(kernel)
         embedded_y = tf.matmul(y, kernel)

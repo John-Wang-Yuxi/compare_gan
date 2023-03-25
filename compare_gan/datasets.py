@@ -213,12 +213,12 @@ class ImageDatasetV2(object):
       Updates the label in the label dict to the new label.
     """
     label_spec = {
-        "file_name": tf.FixedLenFeature((), tf.string),
-        "label": tf.FixedLenFeature((), tf.int64),
+        "file_name": tf.io.FixedLenFeature((), tf.string),
+        "label": tf.io.FixedLenFeature((), tf.int64),
     }
-    parsed_label = tf.parse_single_example(new_unparsed_label, label_spec)
+    parsed_label = tf.io.parse_single_example(new_unparsed_label, label_spec)
     with tf.control_dependencies([
-        tf.assert_equal(parsed_label["file_name"], feature_dict["file_name"])]):
+        tf.compat.v1.assert_equal(parsed_label["file_name"], feature_dict["file_name"])]):
       feature_dict["label"] = tf.identity(parsed_label["label"])
     return feature_dict
 
@@ -244,7 +244,7 @@ class ImageDatasetV2(object):
         as_dataset_kwargs={"shuffle_files": False})
     ds = self._replace_labels(split, ds)
     ds = ds.map(self._parse_fn)
-    return ds.prefetch(tf.contrib.data.AUTOTUNE)
+    return ds.prefetch(tf.data.experimental.AUTOTUNE)
 
   def _train_filter_fn(self, image, label):
     del image, label
@@ -288,7 +288,7 @@ class ImageDatasetV2(object):
     ds = ds.shuffle(FLAGS.data_shuffle_buffer_size, seed=seed)
     if "batch_size" in params:
       ds = ds.batch(params["batch_size"], drop_remainder=True)
-    return ds.prefetch(tf.contrib.data.AUTOTUNE)
+    return ds.prefetch(tf.data.experimental.AUTOTUNE)
 
   def eval_input_fn(self, params=None, split=None):
     """Input function for reading data.
@@ -315,7 +315,7 @@ class ImageDatasetV2(object):
     # No shuffle.
     if "batch_size" in params:
       ds = ds.batch(params["batch_size"], drop_remainder=True)
-    return ds.prefetch(tf.contrib.data.AUTOTUNE)
+    return ds.prefetch(tf.data.experimental.AUTOTUNE)
 
   # For backwards compatibility ImageDataset.
   def input_fn(self, params, mode=tf.estimator.ModeKeys.TRAIN,
@@ -387,9 +387,9 @@ class CelebaDataset(ImageDatasetV2):
   def _parse_fn(self, features):
     """Returns 64x64x3 image and constant label."""
     image = features["image"]
-    image = tf.image.resize_image_with_crop_or_pad(image, 160, 160)
+    image = tf.image.resize_with_crop_or_pad(image, 160, 160)
     # Note: possibly consider using NumPy's imresize(image, (64, 64))
-    image = tf.image.resize_images(image, [64, 64])
+    image = tf.image.resize(image, [64, 64])
     image.set_shape(self.image_shape)
     image = tf.cast(image, tf.float32) / 255.0
     label = tf.constant(0, dtype=tf.int32)
@@ -420,7 +420,7 @@ class LsunBedroomDataset(ImageDatasetV2):
   def _parse_fn(self, features):
     """Returns a 128x128x3 Tensor with constant label 0."""
     image = features["image"]
-    image = tf.image.resize_image_with_crop_or_pad(
+    image = tf.image.resize_with_crop_or_pad(
         image, target_height=128, target_width=128)
     image = tf.cast(image, tf.float32) / 255.0
     label = tf.constant(0, dtype=tf.int32)
@@ -453,7 +453,7 @@ def _transform_imagnet_image(image, target_image_shape, crop_method, seed):
     # to restore it the manual way.
     image.set_shape([None, None, target_image_shape[-1]])
   elif crop_method == "random":
-    tf.set_random_seed(seed)
+    tf.compat.v1.set_random_seed(seed)
     shape = tf.shape(image)
     h, w = shape[0], shape[1]
     size = tf.minimum(h, w)
@@ -471,7 +471,7 @@ def _transform_imagnet_image(image, target_image_shape, crop_method, seed):
     image = tf.slice(image, begin, [size, size, 3])
   elif crop_method != "none":
     raise ValueError("Unsupported crop method: {}".format(crop_method))
-  image = tf.image.resize_images(
+  image = tf.image.resize(
       image, [target_image_shape[0], target_image_shape[1]])
   image.set_shape(target_image_shape)
   return image
@@ -607,12 +607,12 @@ class SoftLabeledImagenetDataset(ImagenetDataset):
       Updates the label in the label dict to the new soft label.
     """
     label_spec = {
-        "file_name": tf.FixedLenFeature((), tf.string),
-        "label": tf.FixedLenFeature([self._num_classes], tf.float32)
+        "file_name": tf.io.FixedLenFeature((), tf.string),
+        "label": tf.io.FixedLenFeature([self._num_classes], tf.float32)
     }
-    parsed_label = tf.parse_single_example(new_unparsed_label, label_spec)
+    parsed_label = tf.io.parse_single_example(new_unparsed_label, label_spec)
     with tf.control_dependencies([
-        tf.assert_equal(parsed_label["file_name"], feature_dict["file_name"])]):
+        tf.compat.v1.assert_equal(parsed_label["file_name"], feature_dict["file_name"])]):
       feature_dict["label"] = tf.nn.softmax(logits=parsed_label["label"])
     return feature_dict
 
