@@ -39,7 +39,7 @@ import gin
 from six.moves import range
 import tensorflow as tf
 
-from tensorflow.contrib.tpu.python.tpu import tpu_function
+from tensorflow.python.tpu import tpu_function
 from tensorflow.python.training import moving_averages  # pylint: disable=g-direct-tensorflow-import
 
 
